@@ -1,0 +1,43 @@
+services:
+  blacklistserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.blacklistServer
+    image: blacklist-image
+    container_name: blacklist-container
+    ports:
+      - "${BLACKLIST_PORT}:${BLACKLIST_PORT}"
+    volumes:
+      - ./data:/usr/src/main/data
+    command:
+      - "${BLACKLIST_PORT}"
+      - "${NUM_OF_BITS}"
+      - "${HASH_ARGS}"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: web-image
+    container_name: web-container
+    ports:
+      - "8080:8080"
+    depends_on:
+      - blacklistserver
+    env_file:
+      - ./src/nodejs-server/.env
+    command:
+      - "${BLACKLIST_IP}"
+      - "${BLACKLIST_PORT}"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: frontend-image
+    container_name: frontend-container
+    ports:
+      - "3000:3000"
+    depends_on:
+      - web
+

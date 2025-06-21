@@ -1,0 +1,29 @@
+.label-options-box {
+  width: 120px;
+  height: 100px;
+  margin-left: 230px;
+  margin-top: 335px;
+  position: fixed;
+  top: 0;
+}
+
+.label-options-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    padding-top: 6px;
+    padding-right: 6px;
+}
+
+.label-options-content {
+    font-size: 16px;
+    margin-bottom: 8px;
+    padding: 0px 3px 3px 10px;
+}
+
+.label-options-content:hover {
+    font-size: 16px;
+    margin-bottom: 8px;
+    background-color: #848383;
+    cursor: pointer;
+}

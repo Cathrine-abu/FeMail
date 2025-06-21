@@ -1,0 +1,32 @@
+.remove-label-overlay {
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-label-box {
+  min-width: 200px;
+  width: fit-content;
+  height: 125px;
+  padding: 20px;
+  position: fixed;
+}
+
+.remove-label-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 20px;
+    padding-bottom: 10px;
+    font-weight: bold;
+}
+
+.remove-label-content {
+    font-size: 16px;
+    padding-bottom: 20px;
+}
+
+.remove-label-button-raw {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}

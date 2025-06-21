@@ -1,0 +1,11 @@
+.circle-button {
+	padding: 4px 4px 5px 5px;
+	cursor: pointer;
+	border-radius: 50%;
+	display: flex;
+	justify-content: center;
+}
+
+.circle-button:hover {
+	background-color: #c4d9fd;
+}

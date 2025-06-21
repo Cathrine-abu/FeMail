@@ -1,0 +1,43 @@
+.mail-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid #ccc;
+  background-color: #f9f9f9;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: white;
+  border-bottom: none;
+  box-shadow: none;  
+}
+
+.toolbar-left button,
+.toolbar-right button {
+  background: none;
+  border: none;
+  font-size: 18px;
+  margin-right: 10px;
+  cursor: pointer;
+  color: #444;
+}
+
+.toolbar-right span {
+  margin-right: 10px;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.mail-drag-icon {
+  visibility: hidden;
+  margin-right: 10px;
+  font-size: 20px;
+  color: #888;
+  display: flex;
+  align-items: center;
+}
+
+.mail-item:hover .mail-drag-icon {
+  visibility: visible;
+}

@@ -1,0 +1,25 @@
+.mail-details-popup {
+  position: absolute;
+  top: 45px;
+  left: 60px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  padding: 16px;
+  font-size: 14px;
+  z-index: 1000;
+  min-width: 280px;
+}
+
+.mail-details-popup p {
+  margin: 6px 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.mail-details-popup strong {
+  display: inline-block;
+  min-width: 70px;
+  color: #1d0f0f; /* Light red for labels */
+}
