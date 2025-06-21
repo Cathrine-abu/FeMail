@@ -1,0 +1,40 @@
+.create-edit-label-overlay {
+  align-items: center;
+  justify-content: center;
+}
+
+.create-edit-label-box {
+  padding: 20px;
+  width: 400px;
+  height: 170px;
+}
+
+.create-edit-label-header {
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+.create-edit-label-content {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.input-box {
+    width: 200px;
+    height: 25px;
+    padding: "8px";
+    font-size: "16px";
+}
+
+.label-button-raw {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.field-error {
+  color: red;
+  font-size: 13px;
+  margin-top: 4px;
+}

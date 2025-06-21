@@ -1,0 +1,106 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+body.dark {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+body.dark .topbar {
+  background-color: #121212;
+  border-bottom: 1px solid #484848;
+}
+
+body.dark .sidebar {
+  background-color: #121212;
+  border-right: 1px solid #484848;
+}
+
+body.dark .create-edit-label-box,
+body.dark .create-edit-mail-box,
+body.dark .label-options-box,
+body.dark .profile-box,
+body.dark .remove-label-box,
+body.dark .mail-details-popup,
+body.dark .move-to-menu,
+body.dark .move-to-search input,
+body.dark .compose-input-line,
+body.dark .compose-body textarea
+{
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border: 1px solid #484848;
+}
+
+body.dark .recipient-pill {
+  color: #000000;
+}
+
+body.dark .sidebar-box:hover,
+body.dark .move-to-item:hover,
+body.dark .mail-item.read,
+body.dark .mail-item,
+body.dark .mail-toolbar,
+body.dark .tab-container,
+body.dark .inbox-container,
+body.dark .view-mail-container,
+body.dark .mail-container {
+  background-color: #414141;
+  color: #ffffff;
+}
+
+body.dark .topbar-search,
+body.dark .sidebar-box.active,
+body.dark .mail-item.unread {
+  background-color: #6d6d6d;
+  color: #ffffff;
+}
+
+body.dark .sidebar-box,
+body.dark .create-edit-mail-box .compose-label,
+body.dark .mail-details-popup p strong,
+body.dark .details-wrapper button,
+body.dark .mail-date-text,
+body.dark .view-mail-body,
+body.dark .search-input,
+body.dark .search-input::placeholder,
+body.dark .mail-subject,
+body.dark .mail-date,
+body.dark .mail-body-preview,
+body.dark .mail-from,
+body.dark .mail-delete,
+body.dark .tab-item,
+body.dark .mail-from-text,
+body.dark .toolbar-right button,
+body.dark .toolbar-left button,
+body.dark .action-bar button {
+  color: #ffffff;
+}
+
+body.dark .btn:hover {
+  box-shadow: 0 1px 5px rgba(61, 61, 61, 0.6), 0 4px 8px rgba(61, 61, 61, 0.5);
+}
+
+body.dark .mail-item:hover {
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+body.dark .mail-delete:hover {
+  color: red;
+}
+
+body.dark .tab-item.active {
+  color: #1a73e8;
+}

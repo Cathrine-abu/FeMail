@@ -1,0 +1,103 @@
+.create-edit-mail-overlay {
+  align-items: end;
+  justify-content: end;
+}
+
+.create-edit-mail-box {
+  width: 450px;
+  height: 450px;
+  margin-right: 80px;
+}
+
+.compose-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.create-edit-mail-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 20px;
+    background-color: #64acff;
+    padding: 7px 9px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.compose-input-line {
+  flex: 1;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  padding: 6px 4px;
+  outline: none;
+  font-size: 14px;
+}
+
+.mail-button-raw {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-right: 10px;
+}
+
+.compose-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  overflow-y: auto;
+  min-height: 40px;
+  max-height: 65px;
+  padding: 6px 6px;
+  gap: 5px;
+}
+
+.to-field {
+  overflow-y: auto;
+}
+
+.compose-field input {
+  padding: 6px 8px;
+}
+
+.compose-label {
+  font-weight: 500;
+  color: #444;
+}
+
+.compose-body {
+  padding: 8px 6px;
+  width: 107%;
+  height: 58%;
+}
+
+.compose-body textarea {
+  border: none;
+  resize: none;
+  width: 90%;
+  height: 95%;
+  outline: none;
+}
+
+.recipient-pill {
+  background: #e0e0e0;
+  padding: 4px 8px;
+  border-radius: 15px;
+  margin: 2px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.remove-btn {
+  margin-left: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  line-height: 1;
+  color: #333;
+}

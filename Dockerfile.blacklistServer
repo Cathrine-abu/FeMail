@@ -1,0 +1,20 @@
+# Use official GCC image
+FROM gcc:latest
+
+# Install necessary packages for networking and build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory in the container
+WORKDIR /usr/src/main
+
+# Copy all source files to the container
+COPY . .
+
+# Compile Server.cpp and all other relevant source files
+RUN g++ -pthread -o server src/blacklist/*.cpp
+
+# Allow passing a port argument dynamically
+ENTRYPOINT ["./server"]

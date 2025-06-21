@@ -1,0 +1,59 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa;
+  padding: 10px 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+.topbar-head {
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar-search {
+  display: flex;
+  align-items: center;
+  background-color: #f1f3f4;
+  border-radius: 9999px;
+  padding: 8px 12px;
+  flex: 1;
+  max-width: 700px;
+  margin: 0 20px;
+  font-size: 20px;
+}
+
+.search-icon {
+  margin-right: 4px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  width: 100%;
+  line-height: 1;
+  margin: 0px 5px;
+}
+
+.profile-pic {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: block;
+}
+
+.femail-pic {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: block;
+}

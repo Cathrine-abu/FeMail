@@ -1,0 +1,84 @@
+.move-to-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.move-to-menu {
+  position: absolute;
+  top: 120%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  min-width: 200px;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 8px 0;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.move-to-header {
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.move-to-search {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid #ccc;
+  padding: 6px 0;
+}
+
+.move-to-search input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+}
+
+.move-to-divider {
+  height: 1px;
+  background-color: #eee;
+  margin: 6px 0;
+}
+
+.move-to-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.move-to-item:hover {
+  background-color: #f1f3f4;
+}
+
+.move-to-wrapper button {
+  background: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  padding: 4px;
+  margin: 0;
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.action-bar button {
+  position: relative;
+  background: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  padding: 10px;
+  margin: 0;
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.2s ease-in-out;
+}
+

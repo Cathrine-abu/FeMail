@@ -1,0 +1,15 @@
+.mail-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh
+}
+
+.mail-side {
+  display: flex;
+  flex: 1;
+}
+
+.mail-container {
+  flex: 1;
+  background-color: white;
+}
