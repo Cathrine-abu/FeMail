@@ -12,7 +12,7 @@ const StarredMail = () => {
   const userId = localStorage.getItem("userId");
   const [starredMails, setStarredMails] = useState([]);
   const [selectedMails, setSelectedMails] = useState([]);
-  const [error, setError] = useState(null);
+  const [error,] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,7 +39,7 @@ const StarredMail = () => {
         console.error(err);
         
       });
-  }, []);
+  }, [token, userId]);
 
   const { deleteSelectedMails, markSpam, toggleStar, handleDeleteMail } = useMails(token, userId, starredMails, setStarredMails);
   

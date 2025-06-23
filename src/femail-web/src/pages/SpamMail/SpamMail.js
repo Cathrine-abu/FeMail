@@ -12,7 +12,7 @@ const SpamMail = () => {
   const userId = localStorage.getItem("userId");
   const { spamMails, setSpamMails } = useOutletContext();
   const [selectedMails, setSelectedMails] = useState([]);
-  const [error, setError] = useState(null);
+  const [error,] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,7 +28,7 @@ const SpamMail = () => {
       })
       .then((data) => {
         const filtered = data.filter(
-          (mail) => mail.isSpam === true && mail.isDeleted === false
+          (mail) => mail.isSpam === true && mail.isDeleted === false && mail.isDraft === false && !mail.direction.includes("send")
         );
         setSpamMails(filtered);
       })
@@ -36,7 +36,7 @@ const SpamMail = () => {
         console.error(err);
         
       });
-  }, []);
+  }, [token, userId, setSpamMails]);
 
   const { deleteSelectedMails, unMarkSpam, handleStarredMail, handleDeleteMail } = useMails(token, userId, spamMails, setSpamMails);
     
@@ -64,19 +64,16 @@ const SpamMail = () => {
     navigate(`/mails/spam/${mailId}`);
   };
 
-const handleMoveToLabel = (labelName) => {
+const handleMoveToLabel = (labelId) => {
   selectedMails.forEach((id) => {
     const body = {
-      category: labelName,
+      category: labelId,
       isSpam: false
     };
-    console.log(labelName);
-    console.log(body.category);
-    
-    if (labelName !== "trash") {
+
+    if (labelId !== "trash") {
       body.direction = ["received"];
     }
-    console.log(body.direction);
     fetch(`http://localhost:8080/api/mails/${id}`, {
       method: "PATCH",
       headers: {

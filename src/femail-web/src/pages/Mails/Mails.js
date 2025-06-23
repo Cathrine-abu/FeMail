@@ -35,16 +35,16 @@ const Mail = () => {
       localStorage.removeItem('token');
       navigate('/');
     }
-  }, [navigate]);
+  }, [token, navigate]);
   
 
-  const { user, error } = useGetUser(token, userId);
+  const { user, } = useGetUser(token, userId);
   const [inboxMails, setInboxMails] = useState([]);
   const [sendMails, setSendMails] = useState([]);
   const [draftMails, setDraftMails] = useState([]);
   const [spamMails, setSpamMails] = useState([]);
   const [starredMails, setStarredMails] = useState([]);
-  const { labels, setLabels, labelError, setLabelError } = useGetLabels(token, userId);
+  const { labels, setLabels, } = useGetLabels(token, userId);
 
   useEffect(() => {
     setMailCounts({

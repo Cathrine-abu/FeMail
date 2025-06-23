@@ -11,7 +11,7 @@ const SendMail = () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
   const { sendMails, setSendMails } = useOutletContext();
-  const [error, setError] = useState(null);
+  const [error,] = useState(null);
   const [selectedMails, setSelectedMails] = useState([]);
   const navigate = useNavigate();
 
@@ -29,7 +29,7 @@ const SendMail = () => {
       })
       .then((data) => {
         const filtered = data.filter(
-          (mail) => mail.direction.includes("sent") && mail.isSpam !== true && mail.isDeleted === false
+          (mail) => mail.direction.includes("sent") && mail.isDeleted === false
         );
         setSendMails(filtered);
       })
@@ -37,7 +37,7 @@ const SendMail = () => {
         console.error(err);
         
       });
-  }, []);
+  }, [token, userId, setSendMails]);
 
 
   const { deleteSelectedMails, markSpam, handleStarredMail, handleDeleteMail } = useMails(token, userId, sendMails, setSendMails);
@@ -105,6 +105,12 @@ const SendMail = () => {
                 {" "}
                 - {mail.body.slice(0, 40)}...
               </span>
+              
+              {mail.isSpam === true && (
+                <span className="spam-indicator" title="This mail is marked as spam">
+                  ⚠️
+                </span>
+              )}
             </div>
 
             <span className="mail-date">

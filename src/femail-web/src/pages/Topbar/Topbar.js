@@ -15,7 +15,7 @@ const Topbar = () => {
   const [showProfile, setProfile] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [darkMode, setDarkMode] = useState(false);
-  const { user, error } = useGetUser(token, userId);
+  const { user, } = useGetUser(token, userId);
 
   const handleKeyDown = (e) => {
       if (e.key === "Enter" && searchValue.trim()) {

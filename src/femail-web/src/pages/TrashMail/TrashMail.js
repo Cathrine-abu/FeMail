@@ -11,7 +11,7 @@ const TrashMail = () => {
   const userId = localStorage.getItem("userId");
   const [trashMails, setTrashMails] = useState([]);
   const [selectedMails, setSelectedMails] = useState([]);
-  const [error, setError] = useState(null);
+  const [error, ] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const TrashMail = () => {
         console.error(err);
         
       });
-  }, []);
+  }, [token, userId]);
 
   const handleOpenMail = (e, mailId) => {
     const ignore = ["BUTTON", "SVG", "PATH", "INPUT"];
@@ -52,20 +52,20 @@ const TrashMail = () => {
     markSpam(selectedMails, trashMails, setTrashMails, setSelectedMails);
   };
 
-  const handleMoveToLabel = (labelName) => {
-    if (labelName === "Spam") {
+  const handleMoveToLabel = (labelId) => {
+    if (labelId === "Spam") {
       handleMarkSpam();
       return;
     }
 
     selectedMails.forEach((id) => {
       const body = {
-        category: labelName === "Inbox" ? "Primary" : labelName,
+        category: labelId === "Inbox" ? "Primary" : labelId,
         isSpam: false,
         isDeleted: false
       };
 
-      if (labelName === "Inbox") {
+      if (labelId === "Inbox") {
         body.direction = ["received"];
       }
 

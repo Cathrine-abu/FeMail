@@ -14,7 +14,7 @@ The frontend is entirely dynamic and **does not use any hardcoded content**. All
 - JWT Tokens: Secured authentication for protected endpoints
 
 ###  Mail Management
-- Inbox, Drafts, Sent, Spam views
+- Inbox, Drafts, Sent, Spam, Star views
 - Send new mail (integrated blacklist check)
 - Edit & delete drafts
 - Search mails by keyword
@@ -94,12 +94,16 @@ The frontend is entirely dynamic and **does not use any hardcoded content**. All
       * HASH_ARGS - Series of numbers that describe the hash (as many hashes as you want)
     
     **Clarifications**
-    * The Node.js (web) server port will be 8080, The React app port will be 3000.
-    * please make sure these ports (8080, 3000) are avilables for use
+    * The Node.js (web) server runs on port 8080, and the React app runs on port 3000.
+    * Please make sure that both ports **8080** and **3000** are available on your machine (i.e., not used by other applications or blocked by firewall)
     * Do not include the '<' '>' or '...' symbols in your command
-3. Wait for the docker to complete his running, you will see a message 'webpack compiled ...' on the terminal
-4. In your browser open http://localhost:3000 or http://<your_ip>:3000
-5. Start using the app
+3. Wait for Docker Compose to finish starting all the containers (blacklistserver, web. frontend)  
+   Once everything is up, you’ll see the message:  
+   "webpack compiled successfully" — indicating that the app is ready
+4. Open your browser and go to:  
+   - `http://localhost:3000` — to access the web app from your local machine  
+   - Or `http://<your-ip>:3000` — to access it from another device on the same network
+5. You can now start using the full application
 
 ## Known Limitations
 * Data is stored in-memory, no persistence on server restart (except blacklist URLs)

@@ -15,7 +15,7 @@ export const useGetUser = (token, userId) => {
       })
       .then((data) => setUser(data))
       .catch((err) => setError(err.message));
-  }, [userId]);
+  }, [token, userId]);
 
   return { user, error };
 };
@@ -36,7 +36,7 @@ export const useGetUserByUsername = (token, username) => {
       })
       .then((data) => setUser(data))
       .catch((err) => setError(err.message));
-  }, [username]);
+  }, [token, username]);
 
   return { user, error };
 };
