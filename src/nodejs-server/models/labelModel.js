@@ -12,11 +12,6 @@ labelsSchema.plugin(AutoIncrement, { inc_field: 'id' });
 
 const Labels = mongoose.model('Labels', labelsSchema);
 
-// CRUD functions
-////
-let labelId = 0;
-const labels = [];
-
 // Return a specific label by ID
 const getLabel = async (id) => {
   return await Labels.findOne({ id }).lean();

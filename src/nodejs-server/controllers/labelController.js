@@ -1,5 +1,5 @@
 // Import the in-memory data store
-const storeLabels = require('../models/labelModel'); // This is the Mongoose model
+const storeLabels = require('../models/labelModel');
 
 // GET /api/labels
 exports.getAllLabels = async (req, res) => {
