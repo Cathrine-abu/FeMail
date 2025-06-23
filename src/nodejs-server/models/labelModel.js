@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const AutoIncrement = require('mongoose-sequence')(mongoose);
 
-// Define the Labels schema + model
+// Define the Labels schema
 const labelsSchema = new mongoose.Schema({
   name: { type: String, required: true },
   userId: { type: String, required: true }
