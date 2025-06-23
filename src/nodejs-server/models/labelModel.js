@@ -1,37 +1,53 @@
+const mongoose = require('mongoose');
+const AutoIncrement = require('mongoose-sequence')(mongoose);
+
+// Define the Labels schema + model
+const labelsSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  userId: { type: String, required: true }
+});
+
+// Add auto-incrementing `id` field
+labelsSchema.plugin(AutoIncrement, { inc_field: 'id' });
+
+const Labels = mongoose.model('Labels', labelsSchema);
+
+// CRUD functions
+////
 let labelId = 0;
 const labels = [];
 
 // Return a specific label by ID
-const getLabel = (id) => labels.find(l => l.id === id);
+const getLabel = async (id) => {
+  return await Labels.findOne({ id }).lean();
+};
 
 // Create a new label with a unique ID for spacific user
-const createLabel = (name, userId) => {
-  const newLabel = { id: (++labelId).toString(), name, userId};
-  labels.push(newLabel);
-  return newLabel;
+const createLabel = async (name, userId) => {
+  const newLabel = new Labels({ name, userId });
+  const savedLabel = await newLabel.save();
+  return savedLabel.toObject();
 };
 
 // Return all labels for a specific user
-const getAllLabels = (userId) => {
-  return labels.filter(label => label.userId === userId);
+const getAllLabels = async (userId) => {
+  return await Labels.find({ userId }).lean();
 };
 
 // Update an existing label (only the name field in this case)
-const updateLabel = (id, name, userId) => {
-  const index = labels.findIndex(l => l.id === id && l.userId === userId);
-  if (index === -1) return null;
-
-  labels[index].name = name;
-  return labels[index];
+const updateLabel = async (id, name, userId) => {
+  const updated = await Labels.findOneAndUpdate(
+    { id, userId },
+    { name },
+    { new: true }
+  );
+  return updated ? updated.toObject() : null;
 };
 
-
 // Delete a label by ID
-const deleteLabel = (id) => {
-  const index = labels.findIndex(l => l.id === id);
-  if (index === -1) return null;
-
-  return labels.splice(index, 1)[0]; // return the deleted label
+const deleteLabel = async (id) => {
+  const deleted = await Labels.findOneAndDelete({ id });
+  return deleted ? deleted.toObject() : null;
 };
 
 // Export the CRUD functions
