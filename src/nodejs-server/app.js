@@ -3,10 +3,21 @@ const express = require('express');
 const path = require('path');
 const app = express();
 const cors = require('cors');
+const mongoose = require('mongoose');
 
 // Get user arguments
-const args = process.argv.slice(2);
 const PORT = 8080;
+const MONGO_URI = "mongodb://mongo-container:27017/femail-db";
+
+// MongoDB Connection
+mongoose.connect(MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() =>
+    // Start the server and listen for requests
+    app.listen(PORT, () => {}))
+.catch((err) => console.error('MongoDB connection error:', err));
 
 // Middleware to parse incoming JSON requests with increased size limit
 app.use(express.json({ limit: '50mb' }));
@@ -29,6 +40,3 @@ app.use('/api/users', userRoutes);           // For user-related endpoints
 app.use('/api/tokens', tokenRoutes);         // For token-related endpoints
 app.use('/api/blacklist', blacklistRoutes);  // For blacklist-related endpoints
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Start the server and listen for requests
-app.listen(PORT, () => {});
