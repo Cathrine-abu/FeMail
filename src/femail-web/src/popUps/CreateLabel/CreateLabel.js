@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import '../../components/PopUp/PopUp.css';
 import '../../components/PopUp/CreateEditLabel.css';
 import Button from '../../components/Button/Button';
@@ -10,10 +10,10 @@ const CreateLabel = ({ show, onClose, setLabels, labels }) => {
     const [labelName, setLabelName] = useState("");
     const [error, setError] = useState("");
 
-    const labelExists = (labels, labelName) => {
+    const labelExists = useCallback((labels, labelName) => {
         if (!Array.isArray(labels)) return false;
         return labels.some(label => label.name.toLowerCase() === labelName.trim().toLowerCase());
-    };
+    }, []);
 
     const isDisabled = useMemo(() => {
         return !labelName.trim() || labelExists(labels, labelName);
@@ -27,7 +27,7 @@ const CreateLabel = ({ show, onClose, setLabels, labels }) => {
         } else {
             setError(null);
         }
-    }, [labelName, labels, setError]);
+    }, [labelName, labels, labelExists, setError]);
 
 
     if (!show) return null;

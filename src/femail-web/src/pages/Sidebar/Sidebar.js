@@ -25,9 +25,6 @@ import {
 } from "react-icons/ai";
 
 const Sidebar = ({ labels, setLabels, addMail, addDraftMail, mailCounts = {}}) => {
-  const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
-
   const folders = {
     inbox: { icon: <AiOutlineInbox />, name: "Inbox" },
     starred: { icon: <AiOutlineStar />, name: "Starred" },

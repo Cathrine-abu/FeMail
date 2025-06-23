@@ -15,7 +15,7 @@ const SearchMail = () => {
   const navigate = useNavigate();
 
   const { deleteSelectedMails, markSpam, handleStarredMail, handleDeleteMail } = useMails(token, userId);
-  const { searchMails, setSearchMails, error, setError } = useGetSearch(token, userId, query);
+  const { searchMails, setSearchMails, error, } = useGetSearch(token, userId, query);
   
   const handleDeleteSelected = () => {
     deleteSelectedMails(selectedMails, setSearchMails, setSelectedMails);

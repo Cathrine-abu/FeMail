@@ -16,7 +16,7 @@ export const useGetSearch = (token, userId, query) => {
       })
       .then((data) => setSearchMails(data))
       .catch((err) => setError(err.message));
-  }, [userId, query]);
+  }, [token, userId, query]);
 
   return { searchMails, setSearchMails, error, setError };
 };

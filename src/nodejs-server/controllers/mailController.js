@@ -22,7 +22,6 @@ exports.getAllMails = (req, res) => {
 // POST /api/mails
 exports.sendMail = async (req, res) => {
     const { subject, body, from, to, isDraft, direction } = req.body;
-
     const owner = req.header('user-id');
 
     // Basic validation
@@ -66,14 +65,15 @@ exports.sendMail = async (req, res) => {
             return res.status(500).json({ error: 'Blacklist check failed' });
         }
     }
-
     const timestamp = new Date().toISOString();
     // generate groupId to connect sent/received if from === to
     const groupId = `${Date.now()}_${from}_${Math.floor(Math.random() * 100000)}`;
 
+    if (!isDraft) {
+
     recipients.forEach(recipient => {
         const recipientUser = findUserByUsername(recipient);
-        if (!recipientUser) return; // Skip if user doesn't exist
+        if (!recipientUser) return;
 
         storeMails.createMail({
             subject,
@@ -90,9 +90,10 @@ exports.sendMail = async (req, res) => {
             isSpam,
             groupId: (getUserById(from).username === recipient) ? groupId : null,
             isRead: false
-
         });
     });
+}
+
 
     const sentMail = storeMails.createMail({
         subject,
@@ -140,7 +141,7 @@ exports.updateMail = async (req, res) => {
     if (!userId) return res.status(400).json({ error: 'Missing user-id header' });
 
     const mail = storeMails.getMail(id);
-    if (!mail || mail.owner !== userId ) return res.status(404).json({ error: 'Mail not found' });
+    if (!mail || mail.owner !== userId) return res.status(404).json({ error: 'Mail not found' });
 
     const updatedFields = req.body;
     const urlsToCheck = [];
@@ -152,6 +153,8 @@ exports.updateMail = async (req, res) => {
     if (updatedFields.body) {
         urlsToCheck.push(...(updatedFields.body.match(urlRegex) || []));
     }
+
+    let isSpam = typeof updatedFields.isSpam === 'boolean' ? updatedFields.isSpam : false;
 
     for (const url of urlsToCheck) {
         try {
@@ -166,14 +169,43 @@ exports.updateMail = async (req, res) => {
                 return res.status(500).json({ error: 'Blacklist check failed during update' });
             }
             if (result.blacklisted) {
-                return res.status(400).json({ error: 'Updated content contains blacklisted URL' });
+                isSpam = true;
             }
         } catch (err) {
             return res.status(500).json({ error: 'Blacklist check failed during update' });
         }
     }
-    if (mail.isDraft && updatedFields.isDraft === false) {
+    updatedFields.isSpam = isSpam;
+    const wasDraft = mail.isDraft;
+    const nowSent = updatedFields.isDraft === false;
+
+    if (wasDraft && nowSent) {
         updatedFields.from = getUserById(userId).username;
+
+        const recipients = Array.isArray(updatedFields.to) ? updatedFields.to : [updatedFields.to];
+        const timestamp = new Date().toISOString();
+
+        recipients.forEach((recipient) => {
+            const recipientUser = findUserByUsername(recipient);
+            if (!recipientUser) return;
+
+            storeMails.createMail({
+                subject: updatedFields.subject,
+                body: updatedFields.body,
+                from: updatedFields.from,
+                to: recipient,
+                user: recipientUser.id.toString(),
+                owner: recipientUser.id.toString(),
+                direction: ['received'],
+                timestamp,
+                isDeleted: false,
+                isDraft: false,
+                isStarred: false,
+                isSpam: isSpam,
+                groupId: null,
+                isRead: false
+            });
+        });
     }
 
     if (updatedFields.category) {
@@ -182,8 +214,11 @@ exports.updateMail = async (req, res) => {
 
     const updated = storeMails.updateMail(id, updatedFields);
 
-    return res.status(200).location(`/api/mails/${mail.id}`).json({id: `${updated.id}`,
-        isSpam: `${updated.isSpam}`, timestamp: `${updated.timestamp}`});
+    return res.status(200).location(`/api/mails/${mail.id}`).json({
+        id: `${updated.id}`,
+        isSpam: `${updated.isSpam}`,
+        timestamp: `${updated.timestamp}`
+    });
 };
 
 // DELETE /api/mails/:id

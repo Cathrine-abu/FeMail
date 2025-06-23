@@ -12,8 +12,8 @@ const MailView = () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
 
-  const [selectedMails, setSelectedMails] = useState([]);
-  const [mails, setMails] = useState([]);
+  const [, setSelectedMails] = useState([]);
+  const [, setMails] = useState([]);
   const { handleStarredMail, deleteSelectedMails, markSpam } = useMails(token, userId);
   const { id } = useParams();
   const [mail, setMail] = useState(null);
@@ -42,7 +42,7 @@ const MailView = () => {
       })
       .then((data) => setMail(data))
       .catch((err) => setError(err.message));
-  }, [id]);
+  }, [token, userId, id]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {

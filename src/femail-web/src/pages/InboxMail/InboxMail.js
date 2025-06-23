@@ -13,7 +13,7 @@ const InboxMail = () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
   const { inboxMails, setInboxMails } = useOutletContext();
-  const [error, setError] = useState(null);
+  const [error, ] = useState(null);
   const [selectedTab, setSelectedTab] = useState("Primary");
   const [selectedMails, setSelectedMails] = useState([]);
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ const InboxMail = () => {
       console.error(err);
       
     });
-}, [selectedTab]);
+}, [token, userId, selectedTab, setInboxMails]);
 
 
   const { deleteSelectedMails, markSpam, handleStarredMail, handleDeleteMail } = useMails(token, userId, inboxMails, setInboxMails);
@@ -62,13 +62,13 @@ const InboxMail = () => {
     markSpam(selectedMails, inboxMails, setInboxMails, setSelectedMails);
   };
 
-  const handleMoveToLabel = (labelName) => {
-    if (labelName === "Spam") {
+  const handleMoveToLabel = (labelId) => {
+    if (labelId === "Spam") {
       handleMarkSpam();
       return;
     }
 
-    if (labelName === "Trash") {
+    if (labelId === "Trash") {
       handleDeleteSelected();
       return;
     }
@@ -81,10 +81,10 @@ const InboxMail = () => {
           "user-id": userId,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ category: labelName }),
+        body: JSON.stringify({ category: labelId }),
       });
     });
-    if (selectedTab != labelName) {
+    if (selectedTab !== labelId) {
       setInboxMails((prev) => prev.filter((mail) => !selectedMails.includes(mail.id)));
     }
     setSelectedMails([]);

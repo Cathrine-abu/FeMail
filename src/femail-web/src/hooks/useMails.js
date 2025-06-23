@@ -18,7 +18,7 @@ export const useGetMail = (token, userId) => {
       })
       .then(setMail)
       .catch((err) => setError(err.message));
-  }, [userId]);
+  }, [token, userId]);
 
   return { mail, error, setError };
 };

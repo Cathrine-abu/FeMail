@@ -10,9 +10,8 @@ import EditMail from "../../popUps/EditMail/EditMail";
 const DraftsMail = () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
-  //const [draftMails, setDraftMails] = useState([]);
   const [selectedMails, setSelectedMails] = useState([]);
-  const [error, setError] = useState(null);
+  const [error, ] = useState(null);
   const navigate = useNavigate();
   const [showCompose, setShowCompose] = useState(false);
   const [selectedDraft, setSelectedDraft] = useState(null);
@@ -41,7 +40,6 @@ const DraftsMail = () => {
             (mail) =>
             mail.direction.includes("draft") &&
             (!mail.isDeleted || mail.isDeleted === undefined) &&
-            (!mail.isSpam || mail.isSpam === undefined) &&
             mail.isDraft === true
         );
         setDraftMails(filtered);
@@ -50,7 +48,7 @@ const DraftsMail = () => {
       .catch((err) => {
         console.error(err);
       });
-  }, []);
+  }, [token, userId, setDraftMails]);
 
   const { deleteSelectedMails, handleStarredMail, handleDeleteMail } = useMails(token, userId, draftMails, setDraftMails);
 

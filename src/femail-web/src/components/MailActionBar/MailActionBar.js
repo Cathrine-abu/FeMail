@@ -28,19 +28,24 @@ const MailActionBar = ({
   const [search, setSearch] = useState("");
   const menuRef = useRef();
 
-  let labelOptions = [...labels.map((label) => label.name), "Social", "Updates", "Promotions"];
+  let labelOptions = [
+    ...labels.map((label) => ({ id: label.id, name: label.name })),
+    { id: "Social", name: "Social" },
+    { id: "Updates", name: "Updates" },
+    { id: "Promotions", name: "Promotions" }
+  ];
 
   if (isInboxPage) {
-    labelOptions.push("Spam", "Trash");
+    labelOptions.push({ id: "Spam", name: "Spam" }, { id: "Trash", name: "Trash" });
   } else if (isTrashPage) {
-    labelOptions.push("Inbox", "Spam");
+    labelOptions.push({ id: "Inbox", name: "Inbox" }, { id: "Spam", name: "Spam" });
   }
   else if (isSpamPage) {
-    labelOptions.push("Trash");
+    labelOptions.push({ id: "Trash", name: "Trash" });
   }
 
   const filteredLabels = labelOptions.filter((label) =>
-    label.toLowerCase().includes(search.toLowerCase())
+    label.name.toLowerCase().includes(search.toLowerCase())
   );
 
   useEffect(() => {
@@ -116,12 +121,12 @@ const MailActionBar = ({
                     key={index}
                     className="move-to-item"
                     onClick={() => {
-                      onMoveTo(label);
+                      onMoveTo(label.id);
                       setMenuOpen(false);
                       setSearch("");
                     }}
                   >
-                    {label}
+                    {label.name}
                   </div>
                 ))}
 

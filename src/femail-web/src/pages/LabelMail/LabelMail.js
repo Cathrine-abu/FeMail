@@ -5,7 +5,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AiOutlineDelete } from "react-icons/ai";
 import MailStarButton from "../../components/MailStarButton/MailStarButton";
 import { useMails, useGetMail } from "../../hooks/useMails";
-import { getLabel } from "../../hooks/useLabels";
 
 const LabelMail = () => {
   const token = localStorage.getItem("token");
@@ -13,12 +12,11 @@ const LabelMail = () => {
   const { labelId } = useParams();
   const navigate = useNavigate();
 
-  const [labelName, setLabelName] = useState(null);
-  const [labelError, setLabelNError] = useState(null);
+  const [labelError,] = useState(null);
   const [labelMails, setLabelMails] = useState([]);
   const [selectedMails, setSelectedMails] = useState([]);
 
-  const { mail, error, setError } = useGetMail(token, userId);
+  const { mail, error, } = useGetMail(token, userId);
   const {
     deleteSelectedMails,
     markSpam,
@@ -27,29 +25,15 @@ const LabelMail = () => {
   } = useMails(token, userId);
 
   useEffect(() => {
-    getLabel(
-      token,
-      userId,
-      labelId,
-      (name) => {
-        setLabelName(name);
-      },
-      (err) => {
-        setLabelNError(err);
-      }
-    );
-  }, [labelId]);
 
-  useEffect(() => {
-
-    if (labelName && Array.isArray(mail)) {
+    if (labelId && Array.isArray(mail)) {
       const filtered = mail.filter((m) => {
-        return m.category === labelName && !m.isSpam && !m.isDeleted;
+        return m.category === labelId && !m.isSpam && !m.isDeleted;
       });
 
       setLabelMails(filtered);
     }
-  }, [labelName, mail]);
+  }, [labelId, mail]);
 
   const handleDeleteSelected = () => {
     deleteSelectedMails(selectedMails, setLabelMails, setSelectedMails);
