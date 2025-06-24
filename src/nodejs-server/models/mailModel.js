@@ -45,7 +45,6 @@ const getMail = async (id) => {
 
 // Create a new mail and store it
 const createMail = async (mailData) => {
-  console.log(mailData);
   const newMail = await Mails.create(mailData);
   const savedMail = await newMail.save();
   return savedMail.toObject();
