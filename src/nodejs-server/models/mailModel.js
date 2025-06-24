@@ -1,60 +1,67 @@
-let mailId = 0;
-const mails = [];
+const mongoose = require('mongoose');
+const AutoIncrement = require('mongoose-sequence')(mongoose);
+
+// Define the Mails schema
+const mailsSchema = new mongoose.Schema({
+  user: { type: String, required: true },
+  owner: { type: String, required: true },
+  direction: { type: [String], required: true },
+  subject: { type: String, required: true },
+  body: { type: String, required: true },
+  from: { type: String, required: true },
+  to: { type: [String], required: true },
+  timestamp: { type: Date, default: Date.now },
+  isDeleted: { type: Boolean, default: false },
+  isDraft: { type: Boolean, default: false },
+  isStarred: { type: Boolean, default: false },
+  isSpam: { type: Boolean, default: false },
+  groupId: { type: String, default: null },
+  isRead: { type: Boolean, default: false },
+  category: { type: String, default: "Primary" }
+});
+
+// Add auto-incrementing `id` field
+mailsSchema.plugin(AutoIncrement, {
+  inc_field: 'id',
+  id: 'mail_id_counter'
+});
+
+const Mails = mongoose.model('Mails', mailsSchema);
 
 // Return all mails
-const getAllMails = () => mails;
+const getAllMails = async () => {
+  return await Mails.find().lean();
+};
 
 // Return mails that belong to a specific user
-const getAllMailsByUser = (userId) => mails.filter(m => m.user === userId);
+const getAllMailsByUser = async (userId) => {
+  return await Mails.find({ user: userId }).sort({ timestamp: -1 }).limit(50).lean();
+};
 
 // Find and return a single mail by its ID
-const getMail = (id) => mails.find(m => m.id === id);
+const getMail = async (id) => {
+  return await Mails.findOne({ id }).lean();
+};
 
 // Create a new mail and store it
-const createMail = (mailData) => {
-  const mail = {
-    id: (++mailId).toString(),
-    user: mailData.user,
-    owner: mailData.owner,        
-    direction: mailData.direction, 
-    subject: mailData.subject,
-    body: mailData.body,
-    from: mailData.from,
-    to: mailData.to,
-    timestamp: mailData.timestamp,
-    isDeleted: mailData.isDeleted,
-    isDraft: mailData.isDraft,
-    isStarred: mailData.isStarred,
-    isSpam: mailData.isSpam,
-    groupId: mailData.groupId,
-    isRead: mailData.isRead,
-    category: mailData.category || "Primary"
-
-  };
-  mails.push(mail);
-  return mail;
+const createMail = async (mailData) => {
+  console.log(mailData);
+  const newMail = await Mails.create(mailData);
+  const savedMail = await newMail.save();
+  return savedMail.toObject();
 };
 
 // Update an existing mail by ID
-const updateMail = (id, updatedFields) => {
-  const index = mails.findIndex(m => m.id === id);
-  if (index === -1) return null;
-
-  mails[index] = {
-    ...mails[index],
-    ...updatedFields
-  };
-  return mails[index];
+const updateMail = async (id, updatedFields) => {
+  const updated = await Mails.findOneAndUpdate({ id }, updatedFields);
+  return updated;
 };
 
 // Delete a mail by ID
-const deleteMail = (id) => {
-  const index = mails.findIndex(m => m.id === id);
-  if (index === -1) return null;
-
-  return mails.splice(index, 1)[0];
+const deleteMail = async (id) => {
+  const deleted = await Mails.findOneAndDelete({ id });
+  return deleted;
 };
-
 
 // Export all methods
 module.exports = {

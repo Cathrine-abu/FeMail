@@ -1,22 +1,22 @@
-// Import the in-memory data store (acts as the "model")
 const storeMails = require('../models/mailModel');
 
-// Import the blacklist checker function via the model
+// Import the blacklist checker function
 const blacklistModel = require('../models/blacklistModel');
 
-// Import the users via the model
+// Import the users
 const { getUserById, findUserByUsername } = require('../models/usersModel');
 
 // GET /api/mails
-exports.getAllMails = (req, res) => {
+exports.getAllMails = async (req, res) => {
     const userId = req.header('user-id');
-    if (!userId) {
-        return res.status(400).json({ error: 'Missing user-id header' });
-    }
+    if (!userId) return res.status(400).json({ error: 'Missing user-id header' });
 
-    const userMails = storeMails.getAllMailsByUser(userId);
-    const recentMails = userMails.slice(-50).reverse();
-    res.status(200).json(recentMails);
+    try {
+        const userMails = await storeMails.getAllMailsByUser(userId);
+        res.status(200).json(userMails);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
 // POST /api/mails
@@ -36,16 +36,11 @@ exports.sendMail = async (req, res) => {
     // If more than one recipient
     const recipients = Array.isArray(to) ? to : [to];
 
-
     // Check URLs in both subject and body
     const urlRegex = /(https?:\/\/)?(www\.)?[^\s]+\.[^\s]+/g;
-    const urls = [
-        ...(subject.match(urlRegex) || []),
-        ...(body.match(urlRegex) || [])
-    ];
+    const urls = [...(subject.match(urlRegex) || []), ...(body.match(urlRegex) || [])];
 
-    isSpam = false;
-
+    let isSpam = false;
     for (const url of urls) {
         try {
             const response = await blacklistModel.isBlacklisted(url);
@@ -65,37 +60,29 @@ exports.sendMail = async (req, res) => {
             return res.status(500).json({ error: 'Blacklist check failed' });
         }
     }
-    const timestamp = new Date().toISOString();
     // generate groupId to connect sent/received if from === to
     const groupId = `${Date.now()}_${from}_${Math.floor(Math.random() * 100000)}`;
 
     if (!isDraft) {
+        for (const recipient of recipients) {
+            const recipientUser = findUserByUsername(recipient);
+            if (!recipientUser) continue;
 
-    recipients.forEach(recipient => {
-        const recipientUser = findUserByUsername(recipient);
-        if (!recipientUser) return;
+            await storeMails.createMail({
+                subject,
+                body,
+                from: getUserById(from).username,
+                to: recipient,
+                user: recipientUser.id.toString(),
+                owner: recipientUser.id.toString(),
+                direction: ['received'],
+                isSpam,
+                groupId: (getUserById(from).username === recipient) ? groupId : null
+            });
+        }
+    }
 
-        storeMails.createMail({
-            subject,
-            body,
-            from: getUserById(from).username,
-            to: recipient,
-            user: recipientUser.id.toString(),
-            owner: recipientUser.id.toString(),
-            direction: ['received'],
-            timestamp,
-            isDeleted: false,
-            isDraft: false,
-            isStarred: false,
-            isSpam,
-            groupId: (getUserById(from).username === recipient) ? groupId : null,
-            isRead: false
-        });
-    });
-}
-
-
-    const sentMail = storeMails.createMail({
+    const sentMail = await storeMails.createMail({
         subject,
         body,
         from: getUserById(from).username,
@@ -103,13 +90,9 @@ exports.sendMail = async (req, res) => {
         user: from,
         owner: from,
         direction: Array.isArray(direction) ? direction : [direction || "sent"],
-        timestamp,
-        isDeleted: false,
         isDraft: isDraft || false,
-        isStarred: false,
         isSpam,
-        groupId: (recipients.includes(getUserById(from).username)) ? groupId : null,
-        isRead: false
+        groupId: (recipients.includes(getUserById(from).username)) ? groupId : null
     });
 
     return res.status(201).location(`/api/mails/${sentMail.id}`).json({id: `${sentMail.id}`,
@@ -117,21 +100,25 @@ exports.sendMail = async (req, res) => {
 };
 
 // GET /api/mails/:id
-exports.getMailById = (req, res) => {
- const { id } = req.params;
+exports.getMailById = async (req, res) => {
+    const { id } = req.params;
     const userId = req.header('user-id');
     
     if (!userId) {
         return res.status(400).json({ error: 'Missing user-id header' });
     }
 
-    const mail = storeMails.getMail(id);
-
-    if (!mail || mail.owner !== userId) {
-        return res.status(404).json({ error: 'Mail not found' });
+    try {
+        const mail = await storeMails.getMail(id);
+    
+        if (!mail || mail.owner !== userId) {
+          return res.status(404).json({ error: 'Mail not found or unauthorized' });
+        }
+    
+        res.status(200).json(mail);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-
-    res.status(200).json(mail);
 };
 
 // PATCH /api/mails/:id
@@ -139,9 +126,6 @@ exports.updateMail = async (req, res) => {
     const { id } = req.params;
     const userId = req.header('user-id');
     if (!userId) return res.status(400).json({ error: 'Missing user-id header' });
-
-    const mail = storeMails.getMail(id);
-    if (!mail || mail.owner !== userId) return res.status(404).json({ error: 'Mail not found' });
 
     const updatedFields = req.body;
     const urlsToCheck = [];
@@ -175,62 +159,76 @@ exports.updateMail = async (req, res) => {
             return res.status(500).json({ error: 'Blacklist check failed during update' });
         }
     }
-    updatedFields.isSpam = isSpam;
-    const wasDraft = mail.isDraft;
-    const nowSent = updatedFields.isDraft === false;
 
-    if (wasDraft && nowSent) {
-        updatedFields.from = getUserById(userId).username;
+    try {
+        const mail = await storeMails.getMail(id);
+        if (!mail || mail.owner !== userId) return res.status(404).json({ error: 'Mail not found' });
 
-        const recipients = Array.isArray(updatedFields.to) ? updatedFields.to : [updatedFields.to];
-        const timestamp = new Date().toISOString();
+        updatedFields.isSpam = isSpam;
+        const wasDraft = mail.isDraft;
+        const nowSent = updatedFields.isDraft === false;
 
-        recipients.forEach((recipient) => {
-            const recipientUser = findUserByUsername(recipient);
-            if (!recipientUser) return;
+        if (wasDraft && nowSent) {
+            const user = await getUserById(userId);
+            if (!user) return res.status(404).json({ error: 'User not found' });
+            
+            updatedFields.from = user.username;
 
-            storeMails.createMail({
-                subject: updatedFields.subject,
-                body: updatedFields.body,
-                from: updatedFields.from,
-                to: recipient,
-                user: recipientUser.id.toString(),
-                owner: recipientUser.id.toString(),
-                direction: ['received'],
-                timestamp,
-                isDeleted: false,
-                isDraft: false,
-                isStarred: false,
-                isSpam: isSpam,
-                groupId: null,
-                isRead: false
+            const recipients = Array.isArray(updatedFields.to) ? updatedFields.to : [updatedFields.to];
+            const timestamp = new Date().toISOString();
+
+            recipients.forEach(async (recipient) => {
+                const recipientUser = await findUserByUsername(recipient);
+                if (!recipientUser) return;
+
+                storeMails.createMail({
+                    subject: updatedFields.subject,
+                    body: updatedFields.body,
+                    from: updatedFields.from,
+                    to: recipient,
+                    user: recipientUser.id.toString(),
+                    owner: recipientUser.id.toString(),
+                    direction: ['received'],
+                    timestamp,
+                    isDeleted: false,
+                    isDraft: false,
+                    isStarred: false,
+                    isSpam: isSpam,
+                    groupId: null,
+                    isRead: false
+                });
             });
+        }
+
+        if (updatedFields.category) {
+            mail.category = updatedFields.category;
+        }
+
+        const updated = await storeMails.updateMail(id, updatedFields);
+
+        return res.status(200).location(`/api/mails/${mail.id}`).json({
+            id: `${updated.id}`,
+            isSpam: `${updated.isSpam}`,
+            timestamp: `${updated.timestamp}`
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-
-    if (updatedFields.category) {
-        mail.category = updatedFields.category;
-    }
-
-    const updated = storeMails.updateMail(id, updatedFields);
-
-    return res.status(200).location(`/api/mails/${mail.id}`).json({
-        id: `${updated.id}`,
-        isSpam: `${updated.isSpam}`,
-        timestamp: `${updated.timestamp}`
-    });
 };
 
 // DELETE /api/mails/:id
-exports.deleteMail = (req, res) => {
+exports.deleteMail = async (req, res) => {
     const { id } = req.params;
     const userId = req.header('user-id');
     if (!userId) return res.status(400).json({ error: 'Missing user-id header' });
 
-    const mail = storeMails.getMail(id);
-    if (!mail || mail.owner !== userId) return res.status(404).json({ error: 'Mail not found' });
+    try {
+        const mail = await storeMails.getMail(id);
+        if (!mail || mail.owner !== userId) return res.status(404).json({ error: 'Mail not found' });
 
-    storeMails.deleteMail(id);
-    res.status(204).send();
+        await storeMails.deleteMail(id);
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
-
