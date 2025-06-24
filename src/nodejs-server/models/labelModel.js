@@ -10,7 +10,7 @@ const labelsSchema = new mongoose.Schema({
 // Add auto-incrementing `id` field
 labelsSchema.plugin(AutoIncrement, {
   inc_field: 'id',
-  id: 'label_id_counter' // different counter name
+  id: 'label_id_counter'
 });
 
 const Labels = mongoose.model('Labels', labelsSchema);
