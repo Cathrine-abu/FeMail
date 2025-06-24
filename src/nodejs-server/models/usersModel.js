@@ -8,7 +8,7 @@ const usersSchema = new mongoose.Schema({
   full_name: { type: String, required: true },
   image: { type: String, required: true },
   phone: { type: String, required: true },
-  birth_date: { type: Date, required: true },
+  birth_date: { type: String, required: true },
   gender: { type: String, required: true }
 });
 
