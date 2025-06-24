@@ -1,4 +1,3 @@
-// Import the in-memory data store
 const storeMails = require('../models/mailModel');
 
 // Import the blacklist checker function
