@@ -63,43 +63,50 @@ exports.sendMail = async (req, res) => {
     // generate groupId to connect sent/received if from === to
     const groupId = `${Date.now()}_${from}_${Math.floor(Math.random() * 100000)}`;
 
-    if (!isDraft) {
-        for (const recipient of recipients) {
-            const recipientUser = findUserByUsername(recipient);
-            if (!recipientUser) continue;
+    const from_user = await getUserById(from);
 
-            await storeMails.createMail({
-                subject,
-                body,
-                from: getUserById(from).username,
-                to: recipient,
-                user: recipientUser.id.toString(),
-                owner: recipientUser.id.toString(),
-                direction: ['received'],
-                isSpam,
-                groupId: (getUserById(from).username === recipient) ? groupId : null
-            });
+    try {
+        if (!isDraft) {
+            for (const recipient of recipients) {
+                const recipientUser = await findUserByUsername(recipient);
+                if (!recipientUser) continue;
+
+
+                await storeMails.createMail({
+                    subject,
+                    body,
+                    from: from_user.username,
+                    to: recipient,
+                    user: recipientUser.id.toString(),
+                    owner: recipientUser.id.toString(),
+                    direction: ['received'],
+                    isSpam,
+                    groupId: (from_user.username === recipient) ? groupId : null
+                });
+            }
         }
+
+        const sentMail = await storeMails.createMail({
+            subject,
+            body,
+            from: from_user.username,
+            to: recipients,
+            user: from,
+            owner: from,
+            direction: Array.isArray(direction) ? direction : [direction || "sent"],
+            isDraft: isDraft || false,
+            isSpam,
+            groupId: (recipients.includes(from_user.username)) ? groupId : null
+        });
+
+        return res.status(201).location(`/api/mails/${sentMail.id}`).json({id: `${sentMail.id}`,
+            isSpam: `${sentMail.isSpam}`, timestamp: `${sentMail.timestamp}`});
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-
-    const sentMail = await storeMails.createMail({
-        subject,
-        body,
-        from: getUserById(from).username,
-        to: recipients,
-        user: from,
-        owner: from,
-        direction: Array.isArray(direction) ? direction : [direction || "sent"],
-        isDraft: isDraft || false,
-        isSpam,
-        groupId: (recipients.includes(getUserById(from).username)) ? groupId : null
-    });
-
-    return res.status(201).location(`/api/mails/${sentMail.id}`).json({id: `${sentMail.id}`,
-        isSpam: `${sentMail.isSpam}`, timestamp: `${sentMail.timestamp}`});
 };
 
-// GET /api/mails/:id
+// GET /api/mails/:id   
 exports.getMailById = async (req, res) => {
     const { id } = req.params;
     const userId = req.header('user-id');
@@ -181,7 +188,7 @@ exports.updateMail = async (req, res) => {
                 const recipientUser = await findUserByUsername(recipient);
                 if (!recipientUser) return;
 
-                storeMails.createMail({
+                await storeMails.createMail({
                     subject: updatedFields.subject,
                     body: updatedFields.body,
                     from: updatedFields.from,
