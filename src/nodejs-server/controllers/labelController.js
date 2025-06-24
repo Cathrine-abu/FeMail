@@ -1,4 +1,3 @@
-// Import the in-memory data store
 const storeLabels = require('../models/labelModel');
 
 // GET /api/labels
