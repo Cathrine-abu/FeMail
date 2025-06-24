@@ -1,0 +1,7 @@
+<resources>
+    <string name="login">Iniciar sesión</string>
+    <string name="username">Usuario</string>
+    <string name="password">Contraseña</string>
+    <string name="login_button">Entrar</string>
+    <string name="login_error">Usuario o contraseña incorrectos</string>
+</resources> 
