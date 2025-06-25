@@ -13,8 +13,5 @@ RUN npm install
 # Copy rest of the React app
 COPY ./src/femail-web/ ./
 
-# Expose the port the React dev server runs on (default is 3000)
-EXPOSE 3000
-
 # Start the React dev server
 CMD ["npm", "start"]

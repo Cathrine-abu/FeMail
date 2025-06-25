@@ -13,9 +13,6 @@ WORKDIR /usr/src/app
 # Copy all source files to the container
 COPY src/nodejs-server ./
 
-# Expose the port the web runs on
-EXPOSE 8080
-
 # Run the script with arguments (set in runtime)
 ENTRYPOINT ["node", "app.js"]
 CMD []

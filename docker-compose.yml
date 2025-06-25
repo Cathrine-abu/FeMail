@@ -9,6 +9,8 @@ services:
       - "${BLACKLIST_PORT}:${BLACKLIST_PORT}"
     volumes:
       - ./data:/usr/src/main/data
+    env_file:
+      - .env
     command:
       - "${BLACKLIST_PORT}"
       - "${NUM_OF_BITS}"
@@ -35,7 +37,7 @@ services:
       - blacklistserver
       - mongo
     env_file:
-      - ./src/nodejs-server/.env
+      - .env
     command:
       - "${BLACKLIST_IP}"
       - "${BLACKLIST_PORT}"
@@ -47,9 +49,13 @@ services:
     image: frontend-image
     container_name: frontend-container
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+    environment:
+      - PORT=${FRONTEND_PORT}
     depends_on:
       - web
+    env_file:
+      - .env
 
 volumes:
   mongo-data:
