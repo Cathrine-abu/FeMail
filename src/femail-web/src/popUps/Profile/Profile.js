@@ -19,7 +19,13 @@ const Profile = ({ show, onClose, user }) => {
                 <img src={user?.image || "/favicon.ico"} className="popup-pic" alt="Profile" />
                 <div className="popup-info">
                     <div className="profile-hi">Hi, {user.full_name}! {user.gender === "female" ? <AiOutlineWoman  /> : user.gender === "male" ? <AiOutlineMan  /> : null}</div>
-                    <div className="profile-content">Birthday: {user.birth_date}</div>
+                    <div className="profile-content">
+                    Birthday: {new Date(user.birth_date).toLocaleDateString('he-IL', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    })}
+                    </div>
                     <div className="profile-content">Phone number: {user.phone}</div>
                     <hr />
                     <div className="profile-button-raw">
