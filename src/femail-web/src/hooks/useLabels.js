@@ -42,6 +42,7 @@ export const postLabel = async (token, userId, setLabels, labelName, setLabelNam
     if (id) {
       setLabels((prev) => [...prev, {id: id, name: labelName}]);
       setLabelName("");
+      return { id };
     }
     else
       setError("error");

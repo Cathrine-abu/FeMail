@@ -4,7 +4,7 @@ import '../../components/PopUp/CreateEditLabel.css';
 import Button from '../../components/Button/Button';
 import { postLabel } from "../../hooks/useLabels";
 
-const CreateLabel = ({ show, onClose, setLabels, labels }) => {
+const CreateLabel = ({ show, onClose, setLabels, labels, onMoveTo = null }) => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
     const [labelName, setLabelName] = useState("");
@@ -14,6 +14,24 @@ const CreateLabel = ({ show, onClose, setLabels, labels }) => {
         if (!Array.isArray(labels)) return false;
         return labels.some(label => label.name.toLowerCase() === labelName.trim().toLowerCase());
     }, []);
+
+    const handleCreate = async () => {
+        const newLabel = await postLabel(
+            token,
+            userId,
+            setLabels,
+            labelName,
+            setLabelName,
+            setError
+        );
+        console.log(onMoveTo);
+        console.log(newLabel?.id);
+        if (onMoveTo && newLabel?.id) {
+            onMoveTo(newLabel.id);
+        }
+        onClose();
+    };
+
 
     const isDisabled = useMemo(() => {
         return !labelName.trim() || labelExists(labels, labelName);
@@ -49,7 +67,7 @@ const CreateLabel = ({ show, onClose, setLabels, labels }) => {
                         variant = 'grey'>
                         Cancel
                     </Button>
-                    <Button onClick={() => {postLabel(token, userId, setLabels, labelName, setLabelName, setError); onClose();}}
+                    <Button onClick={() => {handleCreate()}}
                         variant = 'blue'
                         disabled={isDisabled}>
                         Create

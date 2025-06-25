@@ -6,7 +6,7 @@ const cors = require('cors');
 
 // Get user arguments
 const args = process.argv.slice(2);
-const PORT = 8080;
+const port = args[0];
 
 // Middleware to parse incoming JSON requests with increased size limit
 app.use(express.json({ limit: '50mb' }));
@@ -31,4 +31,4 @@ app.use('/api/blacklist', blacklistRoutes);  // For blacklist-related endpoints
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Start the server and listen for requests
-app.listen(PORT, () => {});
+app.listen(port, () => {});
