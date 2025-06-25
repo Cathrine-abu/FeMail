@@ -49,4 +49,35 @@
     <string name="password">Password</string>
     <string name="login_button">Login</string>
     <string name="login_error">Incorrect username or password</string>
+    <string name="register">Register</string>
+    <string name="register_button">Register</string>
+    <string name="full_name">Full Name</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="phone">Phone Number</string>
+    <string name="birth_date">Birth Date</string>
+    <string name="gender">Gender</string>
+    <string name="select_gender">Select gender</string>
+    <string name="female">Female</string>
+    <string name="male">Male</string>
+    <string name="other">Other</string>
+    <string name="profile_picture">Profile Picture</string>
+    <string name="choose_image">Choose Image</string>
+    <string name="register_error_username">Username must contain only lowercase letters and numbers, and include at least 3 letters.</string>
+    <string name="register_error_password">Password must be at least 8 characters and include letters and numbers.</string>
+    <string name="register_error_confirm_password">Passwords do not match.</string>
+    <string name="register_error_full_name">Full name is required.</string>
+    <string name="register_error_phone">Phone must be 10 digits.</string>
+    <string name="register_error_birth_date">Birth date is required and you must be at least 14 years old.</string>
+    <string name="register_error_gender">Gender is required.</string>
+    <string name="register_error_image">Profile picture is required.</string>
+    <string name="register_error_image_type">Please select a valid image file.</string>
+    <string name="register_error_image_size">File size must be less than 5MB.</string>
+    <string name="register_success">Registration successful!</string>
+    <string name="register_failed">Registration failed. Please try again.</string>
+    <string-array name="gender_array">
+        <item>@string/select_gender</item>
+        <item>@string/female</item>
+        <item>@string/male</item>
+        <item>@string/other</item>
+    </string-array>
 </resources>
