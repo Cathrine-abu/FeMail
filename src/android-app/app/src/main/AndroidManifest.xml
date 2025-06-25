@@ -12,6 +12,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FeMail"
         tools:targetApi="31">
+        <activity android:name=".ViewMail" />
+
+        <activity
+            android:name=".MailList"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
