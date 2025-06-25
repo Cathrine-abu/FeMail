@@ -143,7 +143,7 @@ const MailActionBar = ({
           </div>
         )}
       </div>
-      <CreateLabel show={showCreateLabel} onClose={() => setCreateLabel(false)} setLabels={setLabels} labels={labels} />
+      <CreateLabel show={showCreateLabel} onClose={() => setCreateLabel(false)} setLabels={setLabels} labels={labels} onMoveTo={onMoveTo} />
     </div>
   );
 };

@@ -6,7 +6,8 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 // Get user arguments
-const PORT = 8080;
+const args = process.argv.slice(2);
+const port = args[0];
 const MONGO_URI = "mongodb://mongo-container:27017/femail-db";
 
 // MongoDB Connection
@@ -40,3 +41,6 @@ app.use('/api/users', userRoutes);           // For user-related endpoints
 app.use('/api/tokens', tokenRoutes);         // For token-related endpoints
 app.use('/api/blacklist', blacklistRoutes);  // For blacklist-related endpoints
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Start the server and listen for requests
+app.listen(port, () => {});

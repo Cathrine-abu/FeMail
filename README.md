@@ -62,48 +62,34 @@ The frontend is entirely dynamic and **does not use any hardcoded content**. All
 
 ## Run the Project (starting in FeMail-Part4 directory)
 1. Open Docker Desktop in your computer
-2. Run the app using docker-compose
-    * If the blacklist server is on localhost:
-      * On Linux:
-        ```bash
-        BLACKLIST_IP=host.docker.internal BLACKLIST_PORT=<blacklist_port> NUM_OF_BITS=<num_of_bits> HASH_ARGS="<hash1> <hash2> ..." docker-compose up --build
-        ```
-      * On Windows:
-        ```bash
-        $env:BLACKLIST_IP="host.docker.internal"; $env:BLACKLIST_PORT="<blacklist_port>"; $env:NUM_OF_BITS="<num_of_bits>"; $env:HASH_ARGS="<hash1> <hash2> ..."; docker-compose up --build
-        ```
-    * If the blacklist server is on another machine:
-      * On Linux:
-        ```bash
-        BLACKLIST_IP=<blacklist_ip> BLACKLIST_PORT=<blacklist_port> NUM_OF_BITS=<num_of_bits> HASH_ARGS="<hash1> <hash2> ..." docker-compose up --build
-        ```
-      * On Windows:
-        ```bash
-        $env:BLACKLIST_IP="<blacklist_ip>"; $env:BLACKLIST_PORT="<blacklist_port>"; $env:NUM_OF_BITS="<num_of_bits>"; $env:HASH_ARGS="<hash1> <hash2> ..."; docker-compose up --build
-        ```
+2. Change .env file as you wish<br>
     **Fields explanation**
-    * Put your fields instead of the <...>
-    * All fields are mendetory
+    * All fields are mendetory, don't delete any of the given fields
     * The fields:
       * BLACKLIST_IP - The ip that the blacklist server is running on
-        * Find your ip:<br>
+        * If the blacklist server is on localhost use host.docker.internal
+        * Else, find your ip:<br>
         'hostname -l' command on Linux<br>
         'ipconfig' command on Windows
       * BLACKLIST_PORT - The wanted port you want the blacklist server to run on
       * NUM_OF_BITS - The number of bits for the Bloom filter array
       * HASH_ARGS - Series of numbers that describe the hash (as many hashes as you want)
-    
+      * FRONTEND_PORT - The wanted port you want the frontend to run on
+3. Run the app using docker-compose (Both on Linux and Windows)
+    ```bash
+    docker-compose up --build
+    ```
     **Clarifications**
-    * The Node.js (web) server runs on port 8080, and the React app runs on port 3000.
-    * Please make sure that both ports **8080** and **3000** are available on your machine (i.e., not used by other applications or blocked by firewall)
-    * Do not include the '<' '>' or '...' symbols in your command
-3. Wait for Docker Compose to finish starting all the containers (blacklistserver, web. frontend)  
-   Once everything is up, you’ll see the message:  
+    * The Node.js (web) server runs on port 8080.
+    * Please make sure that this port **8080** is available on your machine (i.e., not used by other applications or blocked by firewall) and don't use this port in the .env file
+4. Wait for Docker Compose to finish starting all the containers (blacklistserver, web. frontend)  
+   Once everything is up, you’ll see the message:
    "webpack compiled successfully" — indicating that the app is ready
-4. Open your browser and go to:  
-   - `http://localhost:3000` — to access the web app from your local machine  
-   - Or `http://<your-ip>:3000` — to access it from another device on the same network
-5. You can now start using the full application
+5. Open your browser and go to:
+   - `http://localhost:FRONTEND_PORT` — to access the web app from your local machine  
+   - Or `http://<your-ip>:FRONTEND_PORT` — to access it from another device on the same network
+   * FRONTEND_PORT is the same port as part 2 in the current secrion (section 'Run the Project')
+6. You can now start using the full application
 
 ## Known Limitations
 * Data is stored in-memory, no persistence on server restart (except blacklist URLs)
