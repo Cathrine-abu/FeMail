@@ -1,7 +1,7 @@
 const usersModel = require('../models/usersModel');
 
 // POST /api/users – Register new user
-exports.registerUser = (req, res) => {
+exports.registerUser = async (req, res) => {
   try {
     const { username, password, full_name, image, phone, birth_date, gender } = req.body;
     
@@ -53,24 +53,25 @@ exports.registerUser = (req, res) => {
     }
 
     // Check if the username already exists
-    const existingUser = usersModel.findUserByUsername(username);
+    const existingUser = await usersModel.findUserByUsername(username);
     if (existingUser) {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
     // Register new user
-    const newUser = usersModel.registerUser(username, password, full_name, image, phone, birth_date, gender);
+    const newUser = await usersModel.registerUser(username, password, full_name, image, phone, birth_date, gender);
     res.status(201).json({ message: 'User registered successfully', user: newUser });
+  
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
 // GET /api/users/:id – Get user details
-exports.getUserById = (req, res) => {
+exports.getUserById = async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
-    const user = usersModel.getUserById(userId);
+    const user = await usersModel.getUserById(userId);
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -85,10 +86,10 @@ exports.getUserById = (req, res) => {
 };
 
 // GET /api/users/username/:username – Get user details by username
-exports.getUserByUsername = (req, res) => {
+exports.getUserByUsername = async (req, res) => {
   try {
     const username = req.params.username;
-    const user = usersModel.findUserByUsername(username);
+    const user = await usersModel.findUserByUsername(username);
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
