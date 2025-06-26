@@ -4,5 +4,9 @@
     <color name="white">#FFFFFFFF</color>
     <color name="purple_500">#6200EE</color>
     <color name="mail_background">#FFFFFFFF</color>
+    <color name="login_bg">#F5F6FA</color>
+    <color name="card_bg">#FFFFFF</color>
+    <color name="accent">#7C3AED</color>
+    <color name="input_bg">#F0F1F6</color>
 
 </resources>
