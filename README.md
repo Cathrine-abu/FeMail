@@ -84,7 +84,7 @@ The frontend is entirely dynamic and **does not use any hardcoded content**. All
     * Please make sure that this port **8080** is available on your machine (i.e., not used by other applications or blocked by firewall) and don't use this port in the .env file
 4. Wait for Docker Compose to finish starting all the containers (blacklistserver, web. frontend)  
    Once everything is up, you’ll see the message:
-   "webpack compiled successfully" — indicating that the app is ready
+   "webpack compiled ..." — indicating that the app is ready
 5. Open your browser and go to:
    - `http://localhost:FRONTEND_PORT` — to access the web app from your local machine  
    - Or `http://<your-ip>:FRONTEND_PORT` — to access it from another device on the same network
