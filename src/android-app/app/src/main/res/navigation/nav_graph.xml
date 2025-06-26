@@ -6,6 +6,12 @@
     app:startDestination="@id/LoginFragment">
 
     <fragment
+        android:id="@+id/RegisterFragment"
+        android:name="com.example.femail.RegisterFragment"
+        android:label="@string/register"
+        tools:layout="@layout/fragment_register" />
+
+    <fragment
         android:id="@+id/LoginFragment"
         android:name="com.example.femail.LoginFragment"
         android:label="@string/login"
@@ -13,6 +19,9 @@
         <action
             android:id="@+id/action_LoginFragment_to_FirstFragment"
             app:destination="@id/FirstFragment" />
+        <action
+            android:id="@+id/action_LoginFragment_to_RegisterFragment"
+            app:destination="@id/RegisterFragment" />
     </fragment>
     <fragment
         android:id="@+id/FirstFragment"

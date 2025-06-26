@@ -64,5 +64,18 @@
             android:fontFamily="sans-serif-medium"
             android:background="@drawable/rounded_button" />
 
+        <TextView
+            android:id="@+id/textViewRegisterPrompt"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Don't have an account? Register here."
+            android:textAlignment="center"
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            app:layout_constraintTop_toBottomOf="@id/buttonLogin"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView> 
