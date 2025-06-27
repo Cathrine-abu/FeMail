@@ -55,7 +55,7 @@ const Sidebar = ({ labels, setLabels, addMail, addDraftMail, mailCounts = {}}) =
         {Object.entries(folders).map(([path, { icon, name }]) => (
           <NavLink to={`/mails/${path}`} key={path} className="sidebar-box">
             <span className="side-icon">{icon}</span>{name}
-            {["inbox", "drafts"].includes(path) && mailCounts[path] > 0 && (
+            {mailCounts[path] > 0 && (
               <span className="count-badge">{mailCounts[path]}</span>
             )}
           </NavLink>

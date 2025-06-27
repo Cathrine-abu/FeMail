@@ -2,14 +2,13 @@ import "../../components/MailRowsStyle/MailRowsStyle.css";
 import MailActionBar from "../../components/MailActionBar/MailActionBar";
 import { useEffect, useState } from "react";
 import { AiOutlineDelete } from "react-icons/ai";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { useMails } from "../../hooks/useMails";
-
 
 const TrashMail = () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
-  const [trashMails, setTrashMails] = useState([]);
+  const { trashMails, setTrashMails } = useOutletContext();
   const [selectedMails, setSelectedMails] = useState([]);
   const [error, ] = useState(null);
   const navigate = useNavigate();
@@ -33,7 +32,7 @@ const TrashMail = () => {
         console.error(err);
         
       });
-  }, [token, userId]);
+  }, [token, userId, setTrashMails]);
 
   const handleOpenMail = (e, mailId) => {
     const ignore = ["BUTTON", "SVG", "PATH", "INPUT"];

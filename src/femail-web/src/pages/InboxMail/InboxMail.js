@@ -12,7 +12,7 @@ import EditMail from "../../popUps/EditMail/EditMail";
 const InboxMail = () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
-  const { inboxMails, setInboxMails } = useOutletContext();
+  const { inboxMails, setInboxMails, addMail, updateDraftMail } = useOutletContext();
   const [error, ] = useState(null);
   const [selectedTab, setSelectedTab] = useState("Primary");
   const [selectedMails, setSelectedMails] = useState([]);
@@ -196,8 +196,9 @@ const InboxMail = () => {
             setShowDraftEdit(false);
             setSelectedDraft(null);
           }}
+          addMail={addMail}
+          updateDraftMail={updateDraftMail}
           draftMail={selectedDraft}
-          setMails={setInboxMails}
         />
 )}
 

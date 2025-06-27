@@ -44,14 +44,19 @@ const Mail = () => {
   const [draftMails, setDraftMails] = useState([]);
   const [spamMails, setSpamMails] = useState([]);
   const [starredMails, setStarredMails] = useState([]);
+  const [trashMails, setTrashMails] = useState([]);
   const { labels, setLabels, } = useGetLabels(token, userId);
 
   useEffect(() => {
     setMailCounts({
       inbox: inboxMails.length,
+      starred: starredMails.length,
+      sent: sendMails.length,
       drafts: draftMails.length,
+      spam: spamMails.length,
+      trash: trashMails.length
     });
-  }, [inboxMails, draftMails]);
+  }, [inboxMails, starredMails, sendMails, draftMails, spamMails, trashMails]);
 
 
   const addMail = (newMail) => {
@@ -77,8 +82,21 @@ const Mail = () => {
 
   const updateDraftMail = (newMail) => {
     if (!newMail) return;
-    setDraftMails(prev => prev.filter(mail => mail.id !== newMail.id));
-    setDraftMails((prev) => [...prev, newMail]);
+    setDraftMails(prev =>
+      prev.map(mail =>
+        mail.id === newMail.id
+          ? { ...mail, ...newMail }
+          : mail
+    ));
+    const exists = inboxMails.some(mail => mail.id === newMail.id);
+    if (exists) {
+      setInboxMails(prev =>
+        prev.map(mail =>
+          mail.id === newMail.id
+            ? { ...mail, ...newMail, direction: ['draft', 'received'] }
+            : mail
+      ));
+    }
   };
 
 
@@ -95,6 +113,7 @@ const Mail = () => {
                             draftMails, setDraftMails,
                             spamMails, setSpamMails,
                             starredMails, setStarredMails,
+                            trashMails, setTrashMails,
                             labels, setLabels,
                             addMail, addDraftMail, updateDraftMail}}/>
         </div>
