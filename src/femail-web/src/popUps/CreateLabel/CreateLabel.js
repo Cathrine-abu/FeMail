@@ -24,8 +24,6 @@ const CreateLabel = ({ show, onClose, setLabels, labels, onMoveTo = null }) => {
             setLabelName,
             setError
         );
-        console.log(onMoveTo);
-        console.log(newLabel?.id);
         if (onMoveTo && newLabel?.id) {
             onMoveTo(newLabel.id);
         }

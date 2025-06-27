@@ -192,7 +192,7 @@ exports.updateMail = async (req, res) => {
                 await storeMails.createMail({
                     subject: updatedFields.subject,
                     body: updatedFields.body,
-                    from: updatedFields.from,
+                    from: getUserById(userId).username,
                     to: recipient,
                     user: recipientUser.id.toString(),
                     owner: recipientUser.id.toString(),

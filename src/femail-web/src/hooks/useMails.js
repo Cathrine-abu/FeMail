@@ -75,7 +75,6 @@ export const postMail = async (token, userId, mailSubject, mailBody,mailFrom, ma
 
 export const patchMail = async (token, userId, mailId, mailSubject, mailBody, mailFrom, mailTo, addMail, setError, isDraft= true) => {
   try {
-    let direction = ["sent"];
     const userResponse = await fetch(`http://localhost:8080/api/users/${userId}`, {
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -87,24 +86,40 @@ export const patchMail = async (token, userId, mailId, mailSubject, mailBody, ma
     if (!userResponse.ok) throw new Error("Failed to get user");
     const user = await userResponse.json();
 
-    if (isDraft) {
-      direction = ["draft"];
+    let direction;
+    if (!isDraft) {
+      direction = ["sent"];
     } else if (
-      mailTo === userId || 
-      (Array.isArray(mailTo) && user?.username && mailTo.includes(user.username))
+      !isDraft &&
+      (mailTo === userId || 
+      (Array.isArray(mailTo) && user?.username && mailTo.includes(user.username)))
     ) {
       direction = ["sent", "received"];
     }
-    const response = await fetch(`http://localhost:8080/api/mails/${mailId}`, {
-      method: "PATCH",
-      headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-          "user-id": userId
-      },
-      body: JSON.stringify({ subject: mailSubject, body: mailBody, from: mailFrom, to: mailTo, isDraft,
-        direction: direction })
-    });
+    let response
+    if (direction) {
+      response = await fetch(`http://localhost:8080/api/mails/${mailId}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+            "user-id": userId
+        },
+        body: JSON.stringify({ subject: mailSubject, body: mailBody, from: userId, to: mailTo, isDraft,
+          direction: direction })
+      });
+    }
+    else {
+      response = await fetch(`http://localhost:8080/api/mails/${mailId}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+            "user-id": userId
+        },
+        body: JSON.stringify({ subject: mailSubject, body: mailBody, from: userId, to: mailTo, isDraft })
+      });
+    }
 
     if (!response.ok) throw new Error("Failed to update mail");
 
