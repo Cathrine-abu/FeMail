@@ -2,6 +2,7 @@ package com.example.femail;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ListView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -34,14 +35,20 @@ public class MailList extends AppCompatActivity {
         loadMails(category);
 
         MailAdapter adapter = new MailAdapter(this, mailItems);
+        Log.d("DEBUG_LIST", "Loaded mails: " + mailItems.size());
+
         listView.setAdapter(adapter);
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
             MailItem clickedMail = mailItems.get(position);
-
+            Log.d("CLICK_TEST", "Clicked on: " + clickedMail.getSubject());
             Intent intent = new Intent(MailList.this, ViewMail.class);
             intent.putExtra("subject", clickedMail.getSubject());
             intent.putExtra("time", clickedMail.getTime());
+            intent.putExtra("starred", clickedMail.getStarred());
+            intent.putExtra("body", clickedMail.getBody());
+            intent.putExtra("sender", clickedMail.getSender());
+
             startActivity(intent);
         });
     }
@@ -64,12 +71,12 @@ public class MailList extends AppCompatActivity {
         String formattedTime = formatMailTime(now);
 
         if ("inbox".equals(category)) {
-            mailItems.add(new MailItem("Welcome to FeMail!", formattedTime, false));
-            mailItems.add(new MailItem("Project reminder", formattedTime, true));
+            mailItems.add(new MailItem("Welcome to FeMail!", formattedTime, "heloooooo", false, false, "user1"));
+            mailItems.add(new MailItem("Project reminder", formattedTime, "wowwww amazing", true, false, "user2"));
         } else if ("spam".equals(category)) {
-            mailItems.add(new MailItem("Win iPhone now!", formattedTime, false));
+            mailItems.add(new MailItem("Win iPhone now!", formattedTime, "spammmm", false, false, "user3"));
         } else if ("sent".equals(category)) {
-            mailItems.add(new MailItem("Your email has been sent", formattedTime, true));
+            mailItems.add(new MailItem("Your email has been sent", formattedTime, "sendddd", true, false, "user4"));
         }
     }
 
