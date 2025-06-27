@@ -69,8 +69,7 @@ exports.sendMail = async (req, res) => {
         if (!isDraft) {
             for (const recipient of recipients) {
                 const recipientUser = await findUserByUsername(recipient);
-                if (!recipientUser) continue;
-
+                if (!recipientUser || recipientUser.username === from_user.username) continue;
 
                 await storeMails.createMail({
                     subject,
