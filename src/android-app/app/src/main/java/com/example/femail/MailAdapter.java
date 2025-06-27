@@ -2,76 +2,101 @@ package com.example.femail;
 
 import android.content.Context;
 import android.content.Intent;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
 import java.util.List;
 
-public class MailAdapter extends ArrayAdapter<MailItem> {
-    private Context context;
-    private List<MailItem> mailItems;
+public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder> {
 
-    public MailAdapter(Context context, List<MailItem> mailItems) {
-        super(context, 0, mailItems);
+    private List<MailItem> mailList;
+    private Context context;
+    //private List<MailItem> mailItems;
+
+    public MailAdapter(Context context, List<MailItem> mailList) {
         this.context = context;
-        this.mailItems = mailItems;
+        this.mailList = mailList;
+    }
+
+    public void setMailList(List<MailItem> mails) {
+        this.mailList = mails;
+        notifyDataSetChanged();
+    }
+
+    @NonNull
+    @Override
+    public MailViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(context).inflate(R.layout.item_mail, parent, false);
+        return new MailViewHolder(view);
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        MailItem mail = mailItems.get(position);
-
-        if (convertView == null) {
-            convertView = LayoutInflater.from(context).inflate(R.layout.item_mail, parent, false);
-        }
-
-        TextView subjectView = convertView.findViewById(R.id.item_mail_subject);
-        TextView timeView = convertView.findViewById(R.id.item_mail_time);
-        ImageView starView = convertView.findViewById(R.id.item_mail_star);
-
-        ImageView profileView = convertView.findViewById(R.id.profile_circle);
-        ImageView checkView = convertView.findViewById(R.id.check_icon);
-        View profileContainer = convertView.findViewById(R.id.profile_container);
-
-        subjectView.setText(mail.subject);
-        timeView.setText(mail.time);
-        starView.setImageResource(mail.isStarred ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
-
+    public void onBindViewHolder(@NonNull MailViewHolder holder, int position) {
+        MailItem mail = mailList.get(position);
+        holder.subjectView.setText(mail.subject);
+        holder.timeView.setText(mail.time);
+        holder.starView.setImageResource(mail.isStarred ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
+        holder.fromView.setText(mail.from);
+        holder.bodyView.setText(mail.body);
         if (mail.isSelected) {
-            checkView.setVisibility(View.VISIBLE);
-            profileView.setVisibility(View.GONE);
+            holder.checkView.setVisibility(View.VISIBLE);
+            holder.profileView.setVisibility(View.GONE);
         } else {
-            checkView.setVisibility(View.GONE);
-            profileView.setVisibility(View.VISIBLE);
+            holder.checkView.setVisibility(View.GONE);
+            holder.profileView.setVisibility(View.VISIBLE);
         }
 
-        profileContainer.setOnClickListener(v -> {
+        holder.profileContainer.setOnClickListener(v -> {
             mail.isSelected = !mail.isSelected;
-            notifyDataSetChanged();
+            notifyItemChanged(position);
         });
 
-        starView.setOnClickListener(v -> {
+        holder.starView.setOnClickListener(v -> {
             mail.isStarred = !mail.isStarred;
-            notifyDataSetChanged();
+            notifyItemChanged(position);
         });
 
-        convertView.setOnClickListener(v -> {
+        holder.itemView.setOnClickListener(v -> {
             if (!mail.isSelected) {
                 Intent intent = new Intent(context, ViewMail.class);
                 intent.putExtra("mail_subject", mail.subject);
                 intent.putExtra("mail_body", mail.body);
                 intent.putExtra("mail_time", mail.time);
-                intent.putExtra("from", mail.sender);
+                intent.putExtra("mail_from", mail.from);
+                //intent.putExtra("mail_to", TextUtils.join(", ", mail.to));
                 context.startActivity(intent);
             }
         });
-
-        return convertView;
     }
 
+    @Override
+    public int getItemCount() {
+        return mailList == null ? 0 : mailList.size();
+    }
 
+    public static class MailViewHolder extends RecyclerView.ViewHolder {
+        TextView subjectView, timeView, fromView, bodyView;
+        ImageView starView, profileView, checkView;
+        View profileContainer;
+
+        public MailViewHolder(@NonNull View itemView) {
+            super(itemView);
+            subjectView = itemView.findViewById(R.id.item_mail_subject);
+            timeView = itemView.findViewById(R.id.item_mail_time);
+            starView = itemView.findViewById(R.id.item_mail_star);
+            profileView = itemView.findViewById(R.id.profile_circle);
+            checkView = itemView.findViewById(R.id.check_icon);
+            profileContainer = itemView.findViewById(R.id.profile_container);
+            fromView = itemView.findViewById(R.id.item_mail_from);
+            bodyView = itemView.findViewById(R.id.item_mail_body);
+        }
+    }
 }
