@@ -15,6 +15,7 @@ import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
+import android.text.style.ForegroundColorSpan;
 import android.widget.TextView;
 import org.json.JSONObject;
 import java.io.BufferedReader;
@@ -23,6 +24,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.Executors;
+import androidx.core.content.ContextCompat;
 
 public class LoginFragment extends Fragment {
 
@@ -147,6 +149,10 @@ public class LoginFragment extends Fragment {
         SpannableString spannable = new SpannableString(promptText);
         int start = promptText.indexOf("Register here");
         int end = start + "Register here".length();
+        // Set 'Register here' to accent color
+        spannable.setSpan(new ForegroundColorSpan(ContextCompat.getColor(requireContext(), R.color.accent)), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        // Set the rest to black
+        spannable.setSpan(new ForegroundColorSpan(ContextCompat.getColor(requireContext(), android.R.color.black)), 0, start, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new ClickableSpan() {
             @Override
             public void onClick(@NonNull View widget) {
