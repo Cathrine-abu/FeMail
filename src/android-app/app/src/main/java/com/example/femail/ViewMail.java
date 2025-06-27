@@ -21,14 +21,23 @@ public class ViewMail extends AppCompatActivity {
         setContentView(R.layout.activity_view_mail);
 
         String subject = getIntent().getStringExtra("mail_subject");
-        String body = getIntent().getStringExtra("mail_body");
         String time = getIntent().getStringExtra("mail_time");
-        String from = getIntent().getStringExtra("from");
+        String body = getIntent().getStringExtra("mail_body");
+        String from = getIntent().getStringExtra("mail_from");
+        String to = getIntent().getStringExtra("mail_to");
+        TextView detailFrom = findViewById(R.id.detail_from);
+        TextView detailTo = findViewById(R.id.detail_to);
+        TextView detailDate = findViewById(R.id.detail_date);
+
+        detailFrom.setText("From: " + from);
+        detailTo.setText("To: " + to);
+        detailDate.setText("Date: " + time);
 
         TextView subjectView = findViewById(R.id.view_mail_subject);
         TextView timeView = findViewById(R.id.view_mail_time);
         TextView bodyView = findViewById(R.id.view_mail_body);
         TextView fromView = findViewById(R.id.view_mail_from);
+
         ImageView starView = findViewById(R.id.view_mail_star);
         ImageView backButton = findViewById(R.id.back_button);
 
