@@ -8,12 +8,15 @@ import androidx.room.TypeConverters;
 
 import com.example.femail.MailDao;
 import com.example.femail.MailItem;
+import com.example.femail.User;
+import com.example.femail.UserDao;
 
-@Database(entities = {MailItem.class}, version = 1)
+@Database(entities = {MailItem.class, User.class}, version = 2)
 @TypeConverters({Converters.class})
 
 public abstract class MailDatabase extends RoomDatabase {
     public abstract MailDao mailDao();
+    public abstract UserDao userDao();
 
     private static volatile MailDatabase INSTANCE;
 

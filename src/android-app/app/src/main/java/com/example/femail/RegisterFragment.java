@@ -24,6 +24,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.lifecycle.ViewModelProvider;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.BufferedReader;
@@ -50,11 +51,14 @@ public class RegisterFragment extends Fragment {
     private ActivityResultLauncher<Intent> galleryLauncher;
     private ActivityResultLauncher<String> requestCameraPermissionLauncher;
 
+    private UserViewModel userViewModel;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_register, container, false);
 
+        userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
         editTextUsername = view.findViewById(R.id.editTextRegisterUsername);
         editTextPassword = view.findViewById(R.id.editTextRegisterPassword);
         editTextConfirmPassword = view.findViewById(R.id.editTextRegisterConfirmPassword);
@@ -120,6 +124,17 @@ public class RegisterFragment extends Fragment {
         // Test server connectivity when fragment loads
         testServerConnectivity();
 
+        userViewModel.registerResult.observe(getViewLifecycleOwner(), result -> {
+            buttonRegisterSubmit.setEnabled(true);
+            buttonRegisterSubmit.setText("Register");
+            if (result.success) {
+                showToast("Registration successful!");
+                NavHostFragment.findNavController(RegisterFragment.this).navigateUp();
+            } else {
+                showToast(result.message);
+            }
+        });
+
         return view;
     }
 
@@ -182,113 +197,26 @@ public class RegisterFragment extends Fragment {
         String birthDate = editTextBirthDate.getText().toString().trim();
         String gender = spinnerGender.getSelectedItem().toString().toLowerCase();
 
-        // Validation (same as before, but gender must be valid)
+        // Validation (same as before)
         if (!username.matches("^[a-z0-9]+$") || username.replaceAll("[^a-z]", "").length() < 3) {
-            showToast(getString(R.string.register_error_username)); return;
+            showToast("Invalid username"); return;
         }
         if (password.length() < 8 || !password.matches(".*\\d.*") || !password.matches(".*[A-Za-z].*")) {
-            showToast(getString(R.string.register_error_password)); return;
+            showToast("Password must be at least 8 characters and contain letters and numbers"); return;
         }
         if (!password.equals(confirmPassword)) {
-            showToast(getString(R.string.register_error_confirm_password)); return;
+            showToast("Passwords do not match"); return;
         }
-        if (TextUtils.isEmpty(fullName)) {
-            showToast(getString(R.string.register_error_full_name)); return;
+        if (fullName.isEmpty()) {
+            showToast("Full name is required"); return;
         }
         if (!phone.matches("^\\d{10}$")) {
-            showToast(getString(R.string.register_error_phone)); return;
-        }
-        if (TextUtils.isEmpty(birthDate)) {
-            showToast(getString(R.string.register_error_birth_date)); return;
-        } else {
-            String[] parts = birthDate.split("-");
-            int year = Integer.parseInt(parts[0]);
-            Calendar today = Calendar.getInstance();
-            int age = today.get(Calendar.YEAR) - year;
-            if (age < 14) {
-                showToast(getString(R.string.register_error_birth_date)); return;
-            }
-        }
-        // Improved gender validation
-        if (gender.equals("select gender") || (!gender.equals("male") && !gender.equals("female") && !gender.equals("other"))) {
-            showToast(getString(R.string.register_error_gender)); return;
-        }
-        if (base64Image == null) {
-            showToast(getString(R.string.register_error_image)); return;
+            showToast("Phone must be 10 digits"); return;
         }
 
-        // API call in background thread
-        Executors.newSingleThreadExecutor().execute(() -> {
-            try {
-                android.util.Log.d("RegisterRequest", "Starting registration for user: " + username);
-                android.util.Log.d("RegisterRequest", "Gender being sent: " + gender);
-                
-                URL url = new URL("http://10.0.2.2:8080/api/users");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-                conn.setDoOutput(true);
-                conn.setConnectTimeout(30000); // 30 seconds
-                conn.setReadTimeout(30000); // 30 seconds
-
-                JSONObject json = new JSONObject();
-                json.put("username", username);
-                json.put("password", password);
-                json.put("full_name", fullName);
-                json.put("phone", phone);
-                json.put("birth_date", birthDate);
-                json.put("gender", gender);
-                json.put("image", base64Image);
-
-                String jsonString = json.toString();
-                android.util.Log.d("RegisterRequest", "Request JSON length: " + jsonString.length());
-                android.util.Log.d("RegisterRequest", "Request JSON preview: " + jsonString.substring(0, Math.min(300, jsonString.length())) + "...");
-
-                DataOutputStream os = new DataOutputStream(conn.getOutputStream());
-                os.writeBytes(jsonString);
-                os.flush();
-                os.close();
-
-                android.util.Log.d("RegisterRequest", "Request sent, waiting for response...");
-
-                int responseCode = conn.getResponseCode();
-                android.util.Log.d("RegisterRequest", "Response code: " + responseCode);
-                BufferedReader in = new BufferedReader(new InputStreamReader(
-                        responseCode >= 200 && responseCode < 300 ? conn.getInputStream() : conn.getErrorStream()
-                ));
-                String inputLine;
-                StringBuilder response = new StringBuilder();
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-                in.close();
-
-                getActivity().runOnUiThread(() -> {
-                    android.util.Log.d("RegisterResponse", "Response Code: " + responseCode);
-                    android.util.Log.d("RegisterResponse", "Response Body: " + response.toString());
-                    
-                    if (responseCode >= 200 && responseCode < 300) {
-                        showToast(getString(R.string.register_success));
-                        NavHostFragment.findNavController(this).navigateUp();
-                    } else {
-                        String errorMsg = getString(R.string.register_failed);
-                        try {
-                            JSONObject resp = new JSONObject(response.toString());
-                            if (resp.has("error")) {
-                                errorMsg = resp.getString("error");
-                                android.util.Log.d("RegisterError", "Server error: " + errorMsg);
-                            }
-                        } catch (Exception e) {
-                            android.util.Log.e("RegisterError", "Failed to parse error response", e);
-                        }
-                        showToast(errorMsg);
-                    }
-                });
-            } catch (Exception e) {
-                android.util.Log.e("RegisterError", "Network error during registration", e);
-                getActivity().runOnUiThread(() -> showToast(getString(R.string.register_failed) + ": " + e.getMessage()));
-            }
-        });
+        buttonRegisterSubmit.setEnabled(false);
+        buttonRegisterSubmit.setText("Registering...");
+        userViewModel.register(username, password, fullName, phone, birthDate, gender, base64Image);
     }
 
     private void testServerConnectivity() {
@@ -317,7 +245,7 @@ public class RegisterFragment extends Fragment {
         });
     }
 
-    private void showToast(String message) {
-        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+    private void showToast(String msg) {
+        Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
     }
 }
