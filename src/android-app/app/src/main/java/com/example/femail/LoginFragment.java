@@ -25,123 +25,46 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.Executors;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 public class LoginFragment extends Fragment {
+
+    private UserViewModel userViewModel;
+    private EditText usernameEditText, passwordEditText;
+    private Button loginButton;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_login, container, false);
 
-        EditText usernameEditText = view.findViewById(R.id.editTextUsername);
-        EditText passwordEditText = view.findViewById(R.id.editTextPassword);
-        Button loginButton = view.findViewById(R.id.buttonLogin);
+        userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
+        usernameEditText = view.findViewById(R.id.editTextUsername);
+        passwordEditText = view.findViewById(R.id.editTextPassword);
+        loginButton = view.findViewById(R.id.buttonLogin);
         TextView registerPrompt = view.findViewById(R.id.textViewRegisterPrompt);
 
-        loginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String username = usernameEditText.getText().toString().trim();
-                String password = passwordEditText.getText().toString();
-                
-                // Validation
-                if (username.isEmpty()) {
-                    Toast.makeText(getActivity(), "Please enter username", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (password.isEmpty()) {
-                    Toast.makeText(getActivity(), "Please enter password", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                
-                // Disable button during login
-                loginButton.setEnabled(false);
-                loginButton.setText("Logging in...");
-                
-                // API call in background thread
-                Executors.newSingleThreadExecutor().execute(() -> {
-                    try {
-                        android.util.Log.d("LoginRequest", "Starting login for user: " + username);
-                        
-                        URL url = new URL("http://10.0.2.2:8080/api/tokens");
-                        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                        conn.setRequestMethod("POST");
-                        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-                        conn.setDoOutput(true);
-                        conn.setConnectTimeout(30000);
-                        conn.setReadTimeout(30000);
+        loginButton.setOnClickListener(v -> {
+            String username = usernameEditText.getText().toString().trim();
+            String password = passwordEditText.getText().toString();
+            if (username.isEmpty() || password.isEmpty()) {
+                Toast.makeText(getActivity(), "Please enter username and password", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            loginButton.setEnabled(false);
+            loginButton.setText("Logging in...");
+            userViewModel.login(username, password);
+        });
 
-                        JSONObject json = new JSONObject();
-                        json.put("username", username);
-                        json.put("password", password);
-
-                        android.util.Log.d("LoginRequest", "Request JSON: " + json.toString());
-
-                        DataOutputStream os = new DataOutputStream(conn.getOutputStream());
-                        os.writeBytes(json.toString());
-                        os.flush();
-                        os.close();
-
-                        int responseCode = conn.getResponseCode();
-                        android.util.Log.d("LoginRequest", "Response code: " + responseCode);
-                        
-                        BufferedReader in = new BufferedReader(new InputStreamReader(
-                                responseCode >= 200 && responseCode < 300 ? conn.getInputStream() : conn.getErrorStream()
-                        ));
-                        String inputLine;
-                        StringBuilder response = new StringBuilder();
-                        while ((inputLine = in.readLine()) != null) {
-                            response.append(inputLine);
-                        }
-                        in.close();
-
-                        getActivity().runOnUiThread(() -> {
-                            // Re-enable button
-                            loginButton.setEnabled(true);
-                            loginButton.setText("Login");
-                            
-                            android.util.Log.d("LoginResponse", "Response Code: " + responseCode);
-                            android.util.Log.d("LoginResponse", "Response Body: " + response.toString());
-                            
-                            if (responseCode >= 200 && responseCode < 300) {
-                                try {
-                                    JSONObject resp = new JSONObject(response.toString());
-                                    String token = resp.getString("token");
-                                    android.util.Log.d("LoginSuccess", "Login successful, token received");
-                                    
-                                    storeAuthToken(token);
-                                    
-                                    Toast.makeText(getActivity(), "Login successful!", Toast.LENGTH_SHORT).show();
-                                    NavHostFragment.findNavController(LoginFragment.this)
-                                        .navigate(R.id.action_LoginFragment_to_FirstFragment);
-                                } catch (Exception e) {
-                                    android.util.Log.e("LoginError", "Failed to parse login response", e);
-                                    Toast.makeText(getActivity(), "Login failed: Invalid response", Toast.LENGTH_SHORT).show();
-                                }
-                            } else {
-                                String errorMsg = getString(R.string.login_error);
-                                try {
-                                    JSONObject resp = new JSONObject(response.toString());
-                                    if (resp.has("error")) {
-                                        errorMsg = resp.getString("error");
-                                        android.util.Log.d("LoginError", "Server error: " + errorMsg);
-                                    }
-                                } catch (Exception e) {
-                                    android.util.Log.e("LoginError", "Failed to parse error response", e);
-                                }
-                                Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    } catch (Exception e) {
-                        android.util.Log.e("LoginError", "Network error during login", e);
-                        getActivity().runOnUiThread(() -> {
-                            // Re-enable button
-                            loginButton.setEnabled(true);
-                            loginButton.setText("Login");
-                            Toast.makeText(getActivity(), "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        });
-                    }
-                });
+        userViewModel.loginResult.observe(getViewLifecycleOwner(), result -> {
+            loginButton.setEnabled(true);
+            loginButton.setText("Login");
+            if (result.success) {
+                Toast.makeText(getActivity(), "Login successful!", Toast.LENGTH_SHORT).show();
+                NavHostFragment.findNavController(LoginFragment.this)
+                        .navigate(R.id.action_LoginFragment_to_FirstFragment);
+            } else {
+                Toast.makeText(getActivity(), result.message, Toast.LENGTH_SHORT).show();
             }
         });
 
