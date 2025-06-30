@@ -1,40 +1,44 @@
-package com.example.femail;
+package com.example.femail.MailFragments;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.femail.MailAdapter;
+import com.example.femail.MailItem;
 import com.example.femail.MailViewModel;
 import com.example.femail.R;
 
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-
 import java.util.ArrayList;
 
-public class InboxFragment extends Fragment {
+public class SendFragment extends Fragment {
 
     private MailViewModel mailViewModel;
     private MailAdapter mailAdapter;
 
-    public InboxFragment() {}
+    public SendFragment() {}
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_inbox, container, false);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.layout_mail_list, container, false);
 
-        RecyclerView recyclerView = view.findViewById(R.id.mail_recycler_view);
+        TextView title = view.findViewById(R.id.mailListTitle);
+        title.setText("Sent");
+
+        RecyclerView recyclerView = view.findViewById(R.id.mailListView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mailAdapter = new MailAdapter(getContext(), new ArrayList<>());
         recyclerView.setAdapter(mailAdapter);
 
         mailViewModel = new ViewModelProvider(requireActivity()).get(MailViewModel.class);
-        mailViewModel.getAllMails().observe(getViewLifecycleOwner(), mails -> {
+        mailViewModel.getSentMails().observe(getViewLifecycleOwner(), mails -> {
             mailAdapter.setMailList(mails);
         });
 

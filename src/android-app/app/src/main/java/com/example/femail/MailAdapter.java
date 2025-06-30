@@ -19,11 +19,16 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
 
     private List<MailItem> mailList;
     private Context context;
-    //private List<MailItem> mailItems;
+    private OnMailClickListener mailClickListener;
 
     public MailAdapter(Context context, List<MailItem> mailList) {
+        this(context, mailList, null);
+    }
+
+    public MailAdapter(Context context, List<MailItem> mailList, OnMailClickListener listener) {
         this.context = context;
         this.mailList = mailList;
+        this.mailClickListener = listener;
     }
 
     public void setMailList(List<MailItem> mails) {
@@ -46,13 +51,9 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
         holder.starView.setImageResource(mail.isStarred ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
         holder.fromView.setText(mail.from);
         holder.bodyView.setText(mail.body);
-        if (mail.isSelected) {
-            holder.checkView.setVisibility(View.VISIBLE);
-            holder.profileView.setVisibility(View.GONE);
-        } else {
-            holder.checkView.setVisibility(View.GONE);
-            holder.profileView.setVisibility(View.VISIBLE);
-        }
+
+        holder.checkView.setVisibility(mail.isSelected ? View.VISIBLE : View.GONE);
+        holder.profileView.setVisibility(mail.isSelected ? View.GONE : View.VISIBLE);
 
         holder.profileContainer.setOnClickListener(v -> {
             mail.isSelected = !mail.isSelected;
@@ -66,13 +67,16 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
 
         holder.itemView.setOnClickListener(v -> {
             if (!mail.isSelected) {
-                Intent intent = new Intent(context, ViewMail.class);
-                intent.putExtra("mail_subject", mail.subject);
-                intent.putExtra("mail_body", mail.body);
-                intent.putExtra("mail_time", mail.time);
-                intent.putExtra("mail_from", mail.from);
-                //intent.putExtra("mail_to", TextUtils.join(", ", mail.to));
-                context.startActivity(intent);
+                if (mailClickListener != null) {
+                    mailClickListener.onMailClick(mail);
+                } else {
+                    Intent intent = new Intent(context, ViewMail.class);
+                    intent.putExtra("mail_subject", mail.subject);
+                    intent.putExtra("mail_body", mail.body);
+                    intent.putExtra("mail_time", mail.time);
+                    intent.putExtra("mail_from", mail.from);
+                    context.startActivity(intent);
+                }
             }
         });
     }
@@ -80,6 +84,10 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
     @Override
     public int getItemCount() {
         return mailList == null ? 0 : mailList.size();
+    }
+
+    public interface OnMailClickListener {
+        void onMailClick(MailItem mail);
     }
 
     public static class MailViewHolder extends RecyclerView.ViewHolder {
@@ -100,3 +108,4 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
         }
     }
 }
+
