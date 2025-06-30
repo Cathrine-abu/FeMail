@@ -41,7 +41,10 @@ public class MailActivity extends AppCompatActivity {
         searchInput = findViewById(R.id.searchInput);
         profilePic = findViewById(R.id.profilePic);
         clearSearch = findViewById(R.id.clearSearch);
+        composeBtn = findViewById(R.id.composeBtn);
         hamburgerMenu = findViewById(R.id.hamburgerMenu);
+        drawerLayout = findViewById(R.id.drawerLayout);
+        navigationView = findViewById(R.id.navigation_view);
 
         clearSearch.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -84,6 +87,8 @@ public class MailActivity extends AppCompatActivity {
                 drawerLayout.openDrawer(GravityCompat.START);
             }
         });
+
+
         // MVVM: Observe labels and inject into menu
         labelViewModel = new ViewModelProvider(this).get(LabelViewModel.class);
         labelViewModel.getAllLabels().observe(this, labels -> {
@@ -119,10 +124,12 @@ public class MailActivity extends AppCompatActivity {
                 showCreateOrEditLabelPopup(null);
                 return true;
             }
+//            String labelName = item.getTitle().toString();
+//            drawerLayout.closeDrawers();
             return true;
         });
     }
-    
+
     private void showProfilePopup() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_profile, null);
@@ -159,7 +166,53 @@ public class MailActivity extends AppCompatActivity {
         builder.setCancelable(true);
         builder.show();
     }
+    private void showCreateOrEditMailPopup(@Nullable MailItem existingMail) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_create_edit_mail, null);
+        builder.setView(view);
+        builder.setCancelable(true);
 
+        AlertDialog dialog = builder.create();
+
+        EditText inputTo = view.findViewById(R.id.inputTo);
+        EditText inputSubject = view.findViewById(R.id.inputSubject);
+        EditText inputBody = view.findViewById(R.id.inputBody);
+        TextView mailTitle = view.findViewById(R.id.mailTitle);
+        Button btnDraft = view.findViewById(R.id.btnDraft);
+        Button btnCreate = view.findViewById(R.id.btnSend);
+
+        // Set up for edit mode
+        if (existingMail != null) {
+            mailTitle.setText("Edit Message");
+        } else {
+            mailTitle.setText("New Message");
+        }
+
+        // Draft button
+//        btnDraft.setOnClickListener(v -> dialog.dismiss());
+
+        // Create/Save button logic
+        btnCreate.setOnClickListener(v -> {
+            String mailTo = inputTo.getText().toString().trim();
+            String mailSubject = inputSubject.getText().toString().trim();
+            String mailBody = inputBody.getText().toString().trim();
+//            if (mailTo.isEmpty()) {
+//                mailError.setText("All fields are mandatory");
+//            }
+
+            if (existingMail != null) {
+                // Update the existing label
+//                existingMail.setName(labelName);
+//                mailViewModel.update(existingMail);
+            } else {
+                // Create new label
+//                MailItem newMail = new MailItem(mailTo, mailSubject, mailBody);
+//                labelViewModel.insert(newMail);
+            }
+            dialog.dismiss();
+        });
+        dialog.show();
+    }
     private void showCreateOrEditLabelPopup(@Nullable LabelItem existingLabel) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_create_edit_label, null);
@@ -224,7 +277,6 @@ public class MailActivity extends AppCompatActivity {
 
         dialog.show();
     }
-    
     private void showLabelOptionPopup(View anchorView) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_label_options, null);
@@ -252,7 +304,6 @@ public class MailActivity extends AppCompatActivity {
 
         dialog.show();
     }
-
     private void showRemoveLabelPopup(LabelItem label) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_remove_label, null);
