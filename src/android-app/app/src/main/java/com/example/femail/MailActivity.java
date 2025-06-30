@@ -42,6 +42,8 @@ public class MailActivity extends AppCompatActivity {
         profilePic = findViewById(R.id.profilePic);
         clearSearch = findViewById(R.id.clearSearch);
         hamburgerMenu = findViewById(R.id.hamburgerMenu);
+        drawerLayout = findViewById(R.id.drawerLayout);
+        navigationView = findViewById(R.id.navigation_view);
 
         clearSearch.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -85,42 +87,4 @@ public class MailActivity extends AppCompatActivity {
             }
         });
     }
-    
-    private void showProfilePopup() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View view = getLayoutInflater().inflate(R.layout.dialog_profile, null);
-
-        // Example user object (replace with your actual user data)
-        String username = "shirafis";
-        String fullName = "Shira Fisher";
-        String gender = "female";
-        String phone = "123456789";
-        String birthday = "2000-01-01";
-
-        ImageView profileImage = view.findViewById(R.id.profileImage);
-        TextView usernameText = view.findViewById(R.id.usernameText);
-        TextView fullNameGender = view.findViewById(R.id.fullNameGender);
-        TextView birthdayText = view.findViewById(R.id.birthdayText);
-        TextView phoneText = view.findViewById(R.id.phoneText);
-        Button logoutButton = view.findViewById(R.id.logoutButton);
-
-        // You can load profileImage using Glide/Picasso if it's from URL
-
-        usernameText.setText(username + "@femail.com");
-        String genderIcon = gender.equals("female") ? "♀" : gender.equals("male") ? "♂" : "";
-        fullNameGender.setText("Hi, " + fullName + "! " + genderIcon);
-        birthdayText.setText("Birthday: " + birthday);
-        phoneText.setText("Phone number: " + phone);
-
-        logoutButton.setOnClickListener(v -> {
-            // Clear token or session
-            Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show();
-            // Optionally finish() or navigate
-        });
-
-        builder.setView(view);
-        builder.setCancelable(true);
-        builder.show();
-    }
-
 }

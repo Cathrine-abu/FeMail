@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <group android:id="@+id/group_static">
+        <item
+            android:id="@+id/nav_inbox"
+            android:checkable="true"
+            android:icon="@android:drawable/ic_dialog_email"
+            android:title="Inbox" />
+
+        <item
+            android:id="@+id/nav_starred"
+            android:checkable="true"
+            android:icon="@android:drawable/star_on"
+            android:title="Starred" />
+
+        <item
+            android:id="@+id/nav_sent"
+            android:checkable="true"
+            android:icon="@android:drawable/ic_menu_send"
+            android:title="Sent" />
+
+        <item
+            android:id="@+id/nav_drafts"
+            android:checkable="true"
+            android:icon="@android:drawable/ic_dialog_email"
+            android:title="Drafts" />
+
+        <item
+            android:id="@+id/nav_spam"
+            android:checkable="true"
+            android:icon="@android:drawable/stat_sys_warning"
+            android:title="Spam" />
+
+        <item
+            android:id="@+id/nav_trash"
+            android:checkable="true"
+            android:icon="@drawable/ic_trash"
+            android:title="Trash" />
+    </group>
+
+    <group android:id="@+id/group_create_label">
+        <item
+            android:id="@+id/create_label"
+            android:checkable="true"
+            android:icon="@drawable/ic_plus"
+            android:title="Create new label"/>
+    </group>
+
+    <group android:id="@+id/group_labels"/>
+</menu>
