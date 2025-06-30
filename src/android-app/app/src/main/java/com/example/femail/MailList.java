@@ -22,7 +22,7 @@ public class MailList extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_mail_list);
+        setContentView(R.layout.layout_mail_list);
 
         listView = findViewById(R.id.mailListView);
         listView.setLayoutManager(new LinearLayoutManager(this));

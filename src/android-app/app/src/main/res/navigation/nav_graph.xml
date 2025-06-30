@@ -23,6 +23,7 @@
             android:id="@+id/action_LoginFragment_to_RegisterFragment"
             app:destination="@id/RegisterFragment" />
     </fragment>
+    
     <fragment
         android:id="@+id/FirstFragment"
         android:name="com.example.femail.FirstFragment"
@@ -32,7 +33,11 @@
         <action
             android:id="@+id/action_FirstFragment_to_SecondFragment"
             app:destination="@id/SecondFragment" />
+        <action
+            android:id="@+id/action_FirstFragment_to_InboxFragment"
+            app:destination="@id/InboxFragment" />
     </fragment>
+    
     <fragment
         android:id="@+id/SecondFragment"
         android:name="com.example.femail.SecondFragment"
@@ -43,4 +48,72 @@
             android:id="@+id/action_SecondFragment_to_FirstFragment"
             app:destination="@id/FirstFragment" />
     </fragment>
+
+    <!-- Mail Fragments -->
+    <fragment
+        android:id="@+id/InboxFragment"
+        android:name="com.example.femail.MailFragments.InboxFragment"
+        android:label="Inbox"
+        tools:layout="@layout/layout_mail_list">
+        <action
+            android:id="@+id/action_InboxFragment_to_ViewMail"
+            app:destination="@id/ViewMail" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/SendFragment"
+        android:name="com.example.femail.MailFragments.SendFragment"
+        android:label="Sent"
+        tools:layout="@layout/layout_mail_list">
+        <action
+            android:id="@+id/action_SendFragment_to_ViewMail"
+            app:destination="@id/ViewMail" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/DraftFragment"
+        android:name="com.example.femail.MailFragments.DraftsFragment"
+        android:label="Drafts"
+        tools:layout="@layout/layout_mail_list">
+        <action
+            android:id="@+id/action_DraftFragment_to_ViewMail"
+            app:destination="@id/ViewMail" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/SpamFragment"
+        android:name="com.example.femail.MailFragments.SpamFragment"
+        android:label="Spam"
+        tools:layout="@layout/layout_mail_list">
+        <action
+            android:id="@+id/action_SpamFragment_to_ViewMail"
+            app:destination="@id/ViewMail" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/StarredFragment"
+        android:name="com.example.femail.MailFragments.StarredFragment"
+        android:label="Starred"
+        tools:layout="@layout/layout_mail_list">
+        <action
+            android:id="@+id/action_StarredFragment_to_ViewMail"
+            app:destination="@id/ViewMail" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/TrashFragment"
+        android:name="com.example.femail.MailFragments.TrashFragment"
+        android:label="Trash"
+        tools:layout="@layout/layout_mail_list">
+        <action
+            android:id="@+id/action_TrashFragment_to_ViewMail"
+            app:destination="@id/ViewMail" />
+    </fragment>
+
+    <activity
+        android:id="@+id/ViewMail"
+        android:name="com.example.femail.ViewMail"
+        android:label="View Mail"
+        tools:layout="@layout/layout_view_mail" />
+
 </navigation>

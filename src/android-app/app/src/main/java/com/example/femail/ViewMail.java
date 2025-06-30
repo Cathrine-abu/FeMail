@@ -18,7 +18,7 @@ public class ViewMail extends AppCompatActivity {
         Log.d("DEBUG_INTENT", "subject: " + getIntent().getStringExtra("subject"));
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_view_mail);
+        setContentView(R.layout.layout_view_mail);
 
         String subject = getIntent().getStringExtra("mail_subject");
         String time = getIntent().getStringExtra("mail_time");
