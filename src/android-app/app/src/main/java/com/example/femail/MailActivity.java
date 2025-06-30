@@ -84,6 +84,43 @@ public class MailActivity extends AppCompatActivity {
                 drawerLayout.openDrawer(GravityCompat.START);
             }
         });
+        // MVVM: Observe labels and inject into menu
+        labelViewModel = new ViewModelProvider(this).get(LabelViewModel.class);
+        labelViewModel.getAllLabels().observe(this, labels -> {
+            Menu menu = navigationView.getMenu();
+            menu.removeGroup(LABEL_GROUP_ID);
+
+            for (LabelItem label : labels) {
+                MenuItem menuItem = menu.add(LABEL_GROUP_ID, Menu.NONE, Menu.NONE, label.getName())
+                        .setIcon(R.drawable.ic_double_arrow)
+                        .setCheckable(true);
+                menuItem.setActionView(R.layout.menu_item_action_icon);
+
+                // Handle clicks on the icon (action view)
+                View actionView = menuItem.getActionView();
+                actionView.setTag(label);
+
+                ImageView icon = actionView.findViewById(R.id.right_icon);
+                icon.setOnClickListener(v -> {
+                    showLabelOptionPopup(v);
+                });
+
+                // Handle clicks on the menu item text itself
+                menuItem.setOnMenuItemClickListener(item -> {
+                    return true;
+                });
+            }
+        });
+
+        // Handle label clicks
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.create_label) {
+                showCreateOrEditLabelPopup(null);
+                return true;
+            }
+            return true;
+        });
     }
     
     private void showProfilePopup() {
@@ -121,6 +158,71 @@ public class MailActivity extends AppCompatActivity {
         builder.setView(view);
         builder.setCancelable(true);
         builder.show();
+    }
+
+    private void showCreateOrEditLabelPopup(@Nullable LabelItem existingLabel) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_create_edit_label, null);
+        builder.setView(view);
+        builder.setCancelable(true);
+
+        AlertDialog dialog = builder.create();
+
+        EditText labelInput = view.findViewById(R.id.labelInput);
+        TextView labelError = view.findViewById(R.id.labelError);
+        TextView labelTitle = view.findViewById(R.id.labelTitle);
+        Button btnCancel = view.findViewById(R.id.btn_cancel);
+        Button btnCreate = view.findViewById(R.id.btn_create);
+
+        // Set up for edit mode
+        if (existingLabel != null) {
+            labelInput.setText(existingLabel.getName());
+            labelTitle.setText("Edit Label");
+            btnCreate.setText("Save");
+        } else {
+            labelTitle.setText("New Label");
+            btnCreate.setText("Create");
+        }
+
+        // Cancel button closes dialog
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        // Create/Save button logic
+        btnCreate.setOnClickListener(v -> {
+            String labelName = labelInput.getText().toString().trim();
+            if (labelName.isEmpty()) {
+                labelError.setText("Label name cannot be empty");
+            }
+
+            // Check for duplicates
+            boolean isDuplicate = false;
+            for (LabelItem item : labelViewModel.getAllLabels().getValue()) {
+                // If it's an existing label, allow the same name only if it's the same item
+                if (item.getName().equalsIgnoreCase(labelName)) {
+                    if (existingLabel == null || item.getId() != existingLabel.getId()) {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isDuplicate) {
+                labelError.setText("Label name already exists");
+                return;
+            }
+            if (existingLabel != null) {
+                // Update the existing label
+                existingLabel.setName(labelName);
+                labelViewModel.update(existingLabel);
+            } else {
+                // Create new label
+                LabelItem newLabel = new LabelItem(labelName);
+                labelViewModel.insert(newLabel);
+            }
+            dialog.dismiss();
+        });
+
+        dialog.show();
     }
 
 }
