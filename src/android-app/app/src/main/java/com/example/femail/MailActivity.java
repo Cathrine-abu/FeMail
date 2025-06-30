@@ -224,5 +224,59 @@ public class MailActivity extends AppCompatActivity {
 
         dialog.show();
     }
+    
+    private void showLabelOptionPopup(View anchorView) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_label_options, null);
+        builder.setView(view);
+        builder.setCancelable(true);
+
+        AlertDialog dialog = builder.create();
+
+        // Get the label associated with this icon
+        View actionView = (View) anchorView.getParent();
+        LabelItem label = (LabelItem) actionView.getTag();
+
+        TextView editLabel = view.findViewById(R.id.editLabelTitle);
+        TextView deleteLabel = view.findViewById(R.id.deleteLabelTitle);
+
+        editLabel.setOnClickListener(v -> {
+            dialog.dismiss();
+            showCreateOrEditLabelPopup(label);
+        });
+
+        deleteLabel.setOnClickListener(v -> {
+            dialog.dismiss();
+            showRemoveLabelPopup(label);
+        });
+
+        dialog.show();
+    }
+
+    private void showRemoveLabelPopup(LabelItem label) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_remove_label, null);
+        builder.setView(view);
+        builder.setCancelable(true);
+
+        AlertDialog dialog = builder.create();
+
+        TextView labelSubtitle = view.findViewById(R.id.labelSubtitle);
+        Button btnCancel = view.findViewById(R.id.btn_cancel);
+        Button btnDelete = view.findViewById(R.id.btn_create);  // This is your delete button
+
+        // Set the label name in subtitle, e.g. "Delete the Label [labelName]?"
+        labelSubtitle.setText("Delete the Label \"" + label.getName() + "\"?");
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnDelete.setOnClickListener(v -> {
+            // Delete the label from your ViewModel/DB
+            labelViewModel.delete(label);
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
 
 }
