@@ -10,8 +10,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+
+import com.example.femail.Mails.MailItem;
+import com.example.femail.Mails.MailViewModel;
 
 public class ViewMail extends AppCompatActivity {
+
+    private MailViewModel mailViewModel;
+    private MailItem currentMail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +32,31 @@ public class ViewMail extends AppCompatActivity {
         String body = getIntent().getStringExtra("mail_body");
         String from = getIntent().getStringExtra("mail_from");
         String to = getIntent().getStringExtra("mail_to");
+        String mailId = getIntent().getStringExtra("mail_id");
+        
+        // Initialize ViewModel
+        mailViewModel = new ViewModelProvider(this).get(MailViewModel.class);
+        
+        // Create current mail object for operations
+        currentMail = new MailItem(
+            mailId,
+            subject,
+            body,
+            from,
+            to != null && !to.isEmpty() ? java.util.List.of(to) : null,
+            time,
+            getIntent().getBooleanExtra("starred", false),
+            true, // isRead
+            false, // isSpam
+            false, // isDraft
+            false, // isDeleted
+            java.util.List.of("inbox"), // direction
+            "current_user",
+            "current_user",
+            null,
+            "inbox",
+            false
+        );
         TextView detailFrom = findViewById(R.id.detail_from);
         TextView detailTo = findViewById(R.id.detail_to);
         TextView detailDate = findViewById(R.id.detail_date);
@@ -40,6 +72,7 @@ public class ViewMail extends AppCompatActivity {
 
         ImageView starView = findViewById(R.id.view_mail_star);
         ImageView backButton = findViewById(R.id.back_button);
+        ImageView trashButton = findViewById(R.id.trash_button);
 
         subjectView.setText(subject);
         timeView.setText(time);
@@ -53,9 +86,25 @@ public class ViewMail extends AppCompatActivity {
         starView.setOnClickListener(v -> {
             isStarred[0] = !isStarred[0];
             starView.setImageResource(isStarred[0] ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
+            // Update the mail in database
+            currentMail.isStarred = isStarred[0];
+            mailViewModel.update(currentMail);
         });
         backButton.setOnClickListener(v -> finish());
-
+        trashButton.setOnClickListener(v -> {
+            if (currentMail.isDeleted || (currentMail.direction != null && currentMail.direction.contains("trash"))) {
+                // Permanently delete
+                mailViewModel.delete(currentMail);
+                Toast.makeText(this, "Mail deleted forever", Toast.LENGTH_SHORT).show();
+            } else {
+                // Move to trash
+                currentMail.isDeleted = true;
+                currentMail.direction = java.util.List.of("trash");
+                mailViewModel.update(currentMail);
+                Toast.makeText(this, "Moved to trash", Toast.LENGTH_SHORT).show();
+            }
+            finish();
+        });
 
         ImageView dropdownIcon = findViewById(R.id.dropdown_icon);
         LinearLayout mailDetailsContainer = findViewById(R.id.mail_details_container);
@@ -77,16 +126,24 @@ public class ViewMail extends AppCompatActivity {
             popupMenu.setOnMenuItemClickListener(item -> {
                 int id = item.getItemId();
                 if (id == R.id.action_move) {
-                    // TODO: implement move logic
-                    Toast.makeText(this, "Move selected", Toast.LENGTH_SHORT).show();
+                    // Move to trash
+                    currentMail.isDeleted = true;
+                    currentMail.direction = java.util.List.of("trash");
+                    mailViewModel.update(currentMail);
+                    Toast.makeText(this, "Moved to trash", Toast.LENGTH_SHORT).show();
+                    finish(); // Close the activity
                     return true;
                 } else if (id == R.id.action_spam) {
-                    // TODO: implement spam logic
+                    // Mark as spam
+                    currentMail.isSpam = true;
+                    currentMail.direction = java.util.List.of("spam");
+                    mailViewModel.update(currentMail);
                     Toast.makeText(this, "Marked as spam", Toast.LENGTH_SHORT).show();
+                    finish(); // Close the activity
                     return true;
                 } else if (id == R.id.action_label) {
-                    // TODO: implement label logic
-                    Toast.makeText(this, "Label added", Toast.LENGTH_SHORT).show();
+                    // Add label (for now, just show a message)
+                    Toast.makeText(this, "Label functionality coming soon", Toast.LENGTH_SHORT).show();
                     return true;
                 }
                 return false;

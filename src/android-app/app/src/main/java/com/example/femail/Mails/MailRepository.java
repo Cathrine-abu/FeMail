@@ -1,4 +1,4 @@
-package com.example.femail;
+package com.example.femail.Mails;
 
 import android.app.Application;
 import android.util.Log;
@@ -62,12 +62,33 @@ public class MailRepository {
         return mailDao.getTrashMailsLive();
     }
 
+    // New category methods
+    public LiveData<List<MailItem>> getPrimaryMails() {
+        return mailDao.getPrimaryMailsLive();
+    }
+
+    public LiveData<List<MailItem>> getSocialMails() {
+        return mailDao.getSocialMailsLive();
+    }
+
+    public LiveData<List<MailItem>> getPromotionsMails() {
+        return mailDao.getPromotionsMailsLive();
+    }
+
+    public LiveData<List<MailItem>> getUpdatesMails() {
+        return mailDao.getUpdatesMailsLive();
+    }
+
     public void insert(MailItem mail) {
         executorService.execute(() -> mailDao.insertMail(mail));
     }
 
     public void delete(MailItem mail) {
         executorService.execute(() -> mailDao.deleteMail(mail));
+    }
+
+    public void update(MailItem mail) {
+        executorService.execute(() -> mailDao.updateMail(mail));
     }
 
     public void deleteAll() {
@@ -230,8 +251,6 @@ public class MailRepository {
         });
     }
 
-    // --- Utility methods ---
-
     private HttpURLConnection setupConnection(URL url, String method, String token, String userId) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestProperty("Content-Type", "application/json");
@@ -243,9 +262,13 @@ public class MailRepository {
     }
 
     private void writeJson(HttpURLConnection conn, String json) throws Exception {
-        OutputStream os = conn.getOutputStream();
-        os.write(json.getBytes());
-        os.flush();
-        os.close();
+        try (OutputStream os = conn.getOutputStream()) {
+            byte[] input = json.getBytes("utf-8");
+            os.write(input, 0, input.length);
+        }
     }
-}
+
+    public LiveData<List<MailItem>> getMailsByLabel(String labelName) {
+        return mailDao.getMailsByLabel(labelName);
+    }
+} 

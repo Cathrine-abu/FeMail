@@ -1,4 +1,4 @@
-package com.example.femail;
+package com.example.femail.Mails;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
@@ -13,10 +13,15 @@ public interface MailDao {
 
     @Query("SELECT * FROM mails")
     LiveData<List<MailItem>> getAllMails();
+    
     @Insert
     void insertMail(MailItem mail);
+    
     @Delete
     void deleteMail(MailItem mail);
+    
+    @androidx.room.Update
+    void updateMail(MailItem mail);
 
     @Query("SELECT * FROM mails WHERE [from] != 'me' AND isRead = 0")
     List<MailItem> getInboxMails();
@@ -27,6 +32,7 @@ public interface MailDao {
     @Query("SELECT * FROM mails WHERE [from] = 'me'")
     List<MailItem> getSentMails();
 
+    // New specific queries for better performance
     @Query("SELECT * FROM mails WHERE direction LIKE '%inbox%' AND isDeleted = 0")
     LiveData<List<MailItem>> getInboxMailsLive();
     
@@ -45,6 +51,22 @@ public interface MailDao {
     @Query("SELECT * FROM mails WHERE isDeleted = 1")
     LiveData<List<MailItem>> getTrashMailsLive();
 
+    // New category queries
+    @Query("SELECT * FROM mails WHERE category = 'primary' AND isDeleted = 0")
+    LiveData<List<MailItem>> getPrimaryMailsLive();
+    
+    @Query("SELECT * FROM mails WHERE category = 'social' AND isDeleted = 0")
+    LiveData<List<MailItem>> getSocialMailsLive();
+    
+    @Query("SELECT * FROM mails WHERE category = 'promotions' AND isDeleted = 0")
+    LiveData<List<MailItem>> getPromotionsMailsLive();
+    
+    @Query("SELECT * FROM mails WHERE category = 'updates' AND isDeleted = 0")
+    LiveData<List<MailItem>> getUpdatesMailsLive();
+
     @Query("DELETE FROM mails")
     void deleteAll();
-}
+
+    @Query("SELECT * FROM mails WHERE category = :labelName AND isDeleted = 0")
+    LiveData<List<MailItem>> getMailsByLabel(String labelName);
+} 
