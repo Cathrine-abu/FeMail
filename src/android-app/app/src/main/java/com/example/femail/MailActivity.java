@@ -221,10 +221,6 @@ public class MailActivity extends AppCompatActivity {
         phoneText.setText(res.getString(R.string.profile_phone, phone));
 
         logoutButton.setOnClickListener(v -> {
-            Toast.makeText(this, res.getString(R.string.profile_log_out), Toast.LENGTH_SHORT).show();
-        });
-
-        logoutButton.setOnClickListener(v -> {
             // Clear token or session
             Toast.makeText(this, R.string.profile_log_out, Toast.LENGTH_SHORT).show();
             // Optionally finish() or navigate
