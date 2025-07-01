@@ -47,8 +47,16 @@ public class LoginFragment extends Fragment {
         loginButton.setOnClickListener(v -> {
             String username = usernameEditText.getText().toString().trim();
             String password = passwordEditText.getText().toString();
-            if (username.isEmpty() || password.isEmpty()) {
-                Toast.makeText(getActivity(), "Please enter username and password", Toast.LENGTH_SHORT).show();
+            if (username.isEmpty()) {
+                usernameEditText.setError(getString(R.string.error_username_required));
+                return;
+            }
+            if (password.isEmpty()) {
+                passwordEditText.setError(getString(R.string.error_password_required));
+                return;
+            }
+            if (password.length() < 8) {
+                passwordEditText.setError(getString(R.string.error_password_too_short));
                 return;
             }
             loginButton.setEnabled(false);
@@ -60,6 +68,7 @@ public class LoginFragment extends Fragment {
             loginButton.setEnabled(true);
             loginButton.setText("Login");
             if (result.success) {
+                AuthPrefs.saveAuthData(requireContext(), result.token, null, null);
                 Toast.makeText(getActivity(), "Login successful!", Toast.LENGTH_SHORT).show();
                 NavHostFragment.findNavController(LoginFragment.this)
                         .navigate(R.id.action_LoginFragment_to_FirstFragment);
@@ -90,15 +99,6 @@ public class LoginFragment extends Fragment {
         testServerConnectivity();
 
         return view;
-    }
-
-    private void storeAuthToken(String token) {
-        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("FeMail", android.content.Context.MODE_PRIVATE);
-        android.content.SharedPreferences.Editor editor = prefs.edit();
-        editor.putString("auth_token", token);
-        editor.putLong("token_timestamp", System.currentTimeMillis());
-        editor.apply();
-        android.util.Log.d("LoginSuccess", "Token stored in SharedPreferences");
     }
 
     private void testServerConnectivity() {

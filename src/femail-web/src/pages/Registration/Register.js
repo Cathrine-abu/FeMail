@@ -31,7 +31,11 @@ export default function Register() {
     if (formData.confirmPassword !== formData.password) {
       newErrors.confirmPassword = 'Passwords do not match.';
     }
-    if (!formData.full_name) newErrors.full_name = 'Full name is required.';
+    if (!formData.full_name) {
+      newErrors.full_name = 'Full name is required.';
+    } else if (!/^[a-zA-Z\s]+$/.test(formData.full_name)) {
+      newErrors.full_name = 'Full name can only contain English letters and spaces.';
+    }
     if (!/^\d{10}$/.test(formData.phone)) {
       newErrors.phone = 'Phone must be 10 digits.';
     }
@@ -303,7 +307,6 @@ export default function Register() {
             accept="image/*"
             onChange={handleChange}
             ref={imageInputRef}
-            required
             className={errors.image ? 'input-error' : ''}
           />
         </div>
