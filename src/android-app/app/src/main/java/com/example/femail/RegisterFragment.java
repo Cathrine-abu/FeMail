@@ -128,8 +128,10 @@ public class RegisterFragment extends Fragment {
             buttonRegisterSubmit.setEnabled(true);
             buttonRegisterSubmit.setText("Register");
             if (result.success) {
-                showToast("Registration successful!");
-                NavHostFragment.findNavController(RegisterFragment.this).navigateUp();
+                AuthPrefs.saveAuthData(requireContext(), null, result.userId, result.username);
+                showToast("Registration successful! Please log in.");
+                NavHostFragment.findNavController(RegisterFragment.this)
+                        .navigateUp();
             } else {
                 showToast(result.message);
             }

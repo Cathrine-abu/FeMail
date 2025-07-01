@@ -17,13 +17,16 @@ public class UserRepository {
     }
 
     public interface AuthCallback {
-        void onResult(boolean success, String message);
+        void onResult(boolean success, String message, String token, String userId, String username);
     }
 
     public void login(String username, String password, AuthCallback callback) {
         executor.execute(() -> {
             boolean success = false;
             String errorMsg = "Unknown error";
+            String token = null;
+            String userId = null;
+            String returnedUsername = null;
             try {
                 URL url = new URL("http://10.0.2.2:8080/api/tokens");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -52,7 +55,10 @@ public class UserRepository {
                 in.close();
 
                 if (responseCode >= 200 && responseCode < 300) {
-                    success = true;
+                    JSONObject resp = new JSONObject(response.toString());
+                    token = resp.optString("token", null);
+                    success = token != null;
+                    if (!success) errorMsg = "Invalid server response";
                 } else {
                     JSONObject resp = new JSONObject(response.toString());
                     errorMsg = resp.has("error") ? resp.getString("error") : "Invalid username or password";
@@ -62,7 +68,10 @@ public class UserRepository {
             }
             final boolean finalSuccess = success;
             final String finalErrorMsg = errorMsg;
-            new Handler(Looper.getMainLooper()).post(() -> callback.onResult(finalSuccess, finalErrorMsg));
+            final String finalToken = token;
+            final String finalUserId = null;
+            final String finalUsername = null;
+            new Handler(Looper.getMainLooper()).post(() -> callback.onResult(finalSuccess, finalErrorMsg, finalToken, finalUserId, finalUsername));
         });
     }
 
@@ -70,6 +79,9 @@ public class UserRepository {
         executor.execute(() -> {
             boolean success = false;
             String errorMsg = "Unknown error";
+            String token = null;
+            String userId = null;
+            String returnedUsername = null;
             try {
                 URL url = new URL("http://10.0.2.2:8080/api/users");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -102,7 +114,13 @@ public class UserRepository {
                 }
                 in.close();
 
-                if (responseCode >= 200 && responseCode < 300) {
+                if (responseCode == 201) {
+                    JSONObject resp = new JSONObject(response.toString());
+                    JSONObject userObj = resp.optJSONObject("user");
+                    if (userObj != null) {
+                        returnedUsername = userObj.optString("username", null);
+                        userId = userObj.has("id") ? String.valueOf(userObj.optInt("id")) : null;
+                    }
                     success = true;
                 } else {
                     JSONObject resp = new JSONObject(response.toString());
@@ -113,7 +131,10 @@ public class UserRepository {
             }
             final boolean finalSuccess = success;
             final String finalErrorMsg = errorMsg;
-            new Handler(Looper.getMainLooper()).post(() -> callback.onResult(finalSuccess, finalErrorMsg));
+            final String finalToken = null;
+            final String finalUserId = userId;
+            final String finalUsername = returnedUsername;
+            new Handler(Looper.getMainLooper()).post(() -> callback.onResult(finalSuccess, finalErrorMsg, finalToken, finalUserId, finalUsername));
         });
     }
 } 
