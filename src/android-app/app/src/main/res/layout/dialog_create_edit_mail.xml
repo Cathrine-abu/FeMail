@@ -20,7 +20,6 @@
             android:id="@+id/mailTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="New Message"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -29,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="To"
+            android:hint="@string/to"
             android:inputType="textEmailAddress"
             android:minHeight="48dp"
             android:padding="12dp" />
@@ -39,7 +38,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:hint="Subject"
+            android:hint="@string/subject"
             android:minHeight="48dp"
             android:padding="12dp" />
 
@@ -49,12 +48,25 @@
             android:layout_height="150dp"
             android:layout_marginTop="8dp"
             android:gravity="top"
-            android:hint="Message"
+            android:hint="@string/message"
             android:inputType="textMultiLine"
             android:minHeight="48dp"
             android:padding="12dp" />
 
+        <TextView
+            android:id="@+id/mailError"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:importantForAccessibility="no"
+            android:textColor="@android:color/holo_red_dark"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/inputBody" />
+
         <LinearLayout
+            style="?android:attr/buttonBarStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -65,15 +77,16 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Save as draft" />
+                android:text="@string/save_as_draft" />
 
             <Button
                 android:id="@+id/btnSend"
+                style="?android:attr/buttonBarButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="Send" />
+                android:text="@string/send" />
         </LinearLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

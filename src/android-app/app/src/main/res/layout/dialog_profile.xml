@@ -25,7 +25,6 @@
                 android:id="@+id/usernameText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="user@femail.com"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 app:layout_constraintTop_toTopOf="parent"
@@ -40,7 +39,6 @@
             android:layout_width="110dp"
             android:layout_height="110dp"
             android:layout_marginBottom="12dp"
-            android:contentDescription="Profile Picture"
             android:scaleType="centerCrop"
             android:src="@drawable/ic_profile_mail"
             android:layout_gravity="center_horizontal"/>
@@ -76,7 +74,7 @@
             android:layout_height="wrap_content"
             android:backgroundTint="@color/accent"
             android:elevation="4dp"
-            android:text="Log Out"
+            android:text="@string/profile_log_out"
             android:textColor="@android:color/white"
             app:cornerRadius="32dp" />
 
