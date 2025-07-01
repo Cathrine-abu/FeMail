@@ -128,4 +128,12 @@ public class MailViewModel extends AndroidViewModel {
     public void deleteMailPermanently(String token, String userId, String mailId) {
         repository.deleteMailPermanently(token, userId, mailId);
     }
+
+    public LiveData<List<MailItem>> getMailsByLabel(String labelName) {
+        return repository.getMailsByLabel(labelName);
+    }
+
+    public LiveData<List<MailItem>> searchMails(String query) {
+        return repository.searchMails(query);
+    }
 } 

@@ -69,4 +69,7 @@ public interface MailDao {
 
     @Query("SELECT * FROM mails WHERE category = :labelName AND isDeleted = 0")
     LiveData<List<MailItem>> getMailsByLabel(String labelName);
+
+    @Query("SELECT * FROM mails WHERE (subject LIKE '%' || :query || '%' OR body LIKE '%' || :query || '%') AND isDeleted = 0")
+    LiveData<List<MailItem>> searchMails(String query);
 } 
