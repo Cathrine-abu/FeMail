@@ -9,7 +9,11 @@
         android:id="@+id/RegisterFragment"
         android:name="com.example.femail.RegisterFragment"
         android:label="@string/register"
-        tools:layout="@layout/fragment_register" />
+        tools:layout="@layout/fragment_register">
+        <action
+            android:id="@+id/action_RegisterFragment_to_FirstFragment"
+            app:destination="@id/FirstFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/LoginFragment"

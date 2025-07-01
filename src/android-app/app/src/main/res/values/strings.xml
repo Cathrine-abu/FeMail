@@ -114,4 +114,7 @@
     <string name="save_as_draft">Save as draft</string>
     <string name="send">Send</string>
     <string name="search">Search</string>
+    <string name="error_username_required">Username is required</string>
+    <string name="error_password_required">Password is required</string>
+    <string name="error_password_too_short">Password must be at least 8 characters</string>
 </resources>

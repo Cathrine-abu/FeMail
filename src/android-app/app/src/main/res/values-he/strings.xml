@@ -4,4 +4,7 @@
     <string name="password">סיסמה</string>
     <string name="login_button">התחבר</string>
     <string name="login_error">שם משתמש או סיסמה שגויים</string>
+    <string name="error_username_required">יש להזין שם משתמש</string>
+    <string name="error_password_required">יש להזין סיסמה</string>
+    <string name="error_password_too_short">סיסמה חייבת להיות לפחות 8 תווים</string>
 </resources> 
