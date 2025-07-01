@@ -1,5 +1,7 @@
 package com.example.femail;
 
+import android.annotation.SuppressLint;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -33,12 +35,14 @@ import com.example.femail.MailFragments.SpamFragment;
 import com.example.femail.MailFragments.StarredFragment;
 import com.example.femail.MailFragments.TrashFragment;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.example.femail.labels.LabelItem;
+import com.example.femail.labels.LabelViewModel;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
 public class MailActivity extends AppCompatActivity {
     private EditText searchInput;
-    private ImageView profilePic, clearSearch, hamburgerMenu, createLabel;
+    private ImageView profilePic, clearSearch, hamburgerMenu;
     private DrawerLayout drawerLayout;
     private ExtendedFloatingActionButton composeBtn;
     private LabelViewModel labelViewModel;
@@ -46,6 +50,7 @@ public class MailActivity extends AppCompatActivity {
     private NavigationView navigationView;
     private final int LABEL_GROUP_ID = R.id.group_labels;
 
+    @SuppressLint("NonConstantResourceId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -103,7 +108,7 @@ public class MailActivity extends AppCompatActivity {
         });
 
 
-        // MVVM: Initialize ViewModels
+        // MVVM: Observe labels and inject into menu
         labelViewModel = new ViewModelProvider(this).get(LabelViewModel.class);
         mailViewModel = new ViewModelProvider(this).get(MailViewModel.class);
         labelViewModel.getAllLabels().observe(this, labels -> {
@@ -135,7 +140,7 @@ public class MailActivity extends AppCompatActivity {
         // Handle label clicks
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-            
+
             // Handle mail navigation
             if (id == R.id.nav_inbox) {
                 navigateToFragment(new InboxFragment());
@@ -184,10 +189,12 @@ public class MailActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private void showProfilePopup() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_profile, null);
 
+        Resources res = getResources();
         // Example user object (replace with your actual user data)
         String username = "shirafis";
         String fullName = "Shira Fisher";
@@ -202,17 +209,24 @@ public class MailActivity extends AppCompatActivity {
         TextView phoneText = view.findViewById(R.id.phoneText);
         Button logoutButton = view.findViewById(R.id.logoutButton);
 
-        // You can load profileImage using Glide/Picasso if it's from URL
+        String genderIcon = "";
+        if (gender.equals(res.getString(R.string.gender_female))) {
+            genderIcon = res.getString(R.string.female_icon);
+        } else if (gender.equals(res.getString(R.string.gender_male))) {
+            genderIcon = res.getString(R.string.male_icon);
+        }
+        usernameText.setText(res.getString(R.string.profile_end_mail, username));
+        fullNameGender.setText(res.getString(R.string.profile_hi, fullName, genderIcon));
+        birthdayText.setText(getString(R.string.profile_birthday, birthday));
+        phoneText.setText(res.getString(R.string.profile_phone, phone));
 
-        usernameText.setText(username + "@femail.com");
-        String genderIcon = gender.equals("female") ? "♀" : gender.equals("male") ? "♂" : "";
-        fullNameGender.setText("Hi, " + fullName + "! " + genderIcon);
-        birthdayText.setText("Birthday: " + birthday);
-        phoneText.setText("Phone number: " + phone);
+        logoutButton.setOnClickListener(v -> {
+            Toast.makeText(this, res.getString(R.string.profile_log_out), Toast.LENGTH_SHORT).show();
+        });
 
         logoutButton.setOnClickListener(v -> {
             // Clear token or session
-            Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.profile_log_out, Toast.LENGTH_SHORT).show();
             // Optionally finish() or navigate
         });
 
@@ -232,6 +246,7 @@ public class MailActivity extends AppCompatActivity {
         EditText inputSubject = view.findViewById(R.id.inputSubject);
         EditText inputBody = view.findViewById(R.id.inputBody);
         TextView mailTitle = view.findViewById(R.id.mailTitle);
+        TextView mailError = view.findViewById(R.id.mailError);
         Button btnDraft = view.findViewById(R.id.btnDraft);
         Button btnCreate = view.findViewById(R.id.btnSend);
        // android.widget.Spinner categorySpinner = view.findViewById(R.id.categorySpinner);
@@ -242,24 +257,27 @@ public class MailActivity extends AppCompatActivity {
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         //categorySpinner.setAdapter(spinnerAdapter);
 
-        // Set up for edit mode
+        // Set up for edit/new mode
         if (existingMail != null) {
-            mailTitle.setText("Edit Message");
+            mailTitle.setText(R.string.edit_message);
             inputTo.setText(existingMail.to != null && !existingMail.to.isEmpty() ? existingMail.to.get(0) : "");
             inputSubject.setText(existingMail.subject);
             inputBody.setText(existingMail.body);
         } else {
-            mailTitle.setText("New Message");
+            mailTitle.setText(R.string.new_message);
         }
-
         // Remove all categorySpinner references and duplicate category declarations
         String category = "primary";
 
-        // Draft button - save as draft
+        // Save as draft button
         btnDraft.setOnClickListener(v -> {
             String mailTo = inputTo.getText().toString().trim();
             String mailSubject = inputSubject.getText().toString().trim();
             String mailBody = inputBody.getText().toString().trim();
+            if (mailTo.isEmpty() || mailSubject.isEmpty() || mailBody.isEmpty()) {
+                mailError.setText(R.string.mandatory_fields);
+                return;
+            }
 
             if (existingMail != null) {
                 // Update existing mail as draft
@@ -298,8 +316,8 @@ public class MailActivity extends AppCompatActivity {
             String mailSubject = inputSubject.getText().toString().trim();
             String mailBody = inputBody.getText().toString().trim();
 
-            if (mailTo.isEmpty() || mailSubject.isEmpty()) {
-                Toast.makeText(this, "To and Subject are required", Toast.LENGTH_SHORT).show();
+            if (mailTo.isEmpty() || mailSubject.isEmpty() || mailBody.isEmpty()) {
+                mailError.setText(R.string.mandatory_fields);
                 return;
             }
 
@@ -352,11 +370,11 @@ public class MailActivity extends AppCompatActivity {
         // Set up for edit mode
         if (existingLabel != null) {
             labelInput.setText(existingLabel.getName());
-            labelTitle.setText("Edit Label");
-            btnCreate.setText("Save");
+            labelTitle.setText(R.string.edit_label);
+            btnCreate.setText(R.string.save);
         } else {
-            labelTitle.setText("New Label");
-            btnCreate.setText("Create");
+            labelTitle.setText(R.string.new_label);
+            btnCreate.setText(R.string.create);
         }
 
         // Cancel button closes dialog
@@ -366,7 +384,8 @@ public class MailActivity extends AppCompatActivity {
         btnCreate.setOnClickListener(v -> {
             String labelName = labelInput.getText().toString().trim();
             if (labelName.isEmpty()) {
-                labelError.setText("Label name cannot be empty");
+                labelError.setText(R.string.empty_label);
+                return;
             }
 
             // Check for duplicates
@@ -382,7 +401,7 @@ public class MailActivity extends AppCompatActivity {
             }
 
             if (isDuplicate) {
-                labelError.setText("Label name already exists");
+                labelError.setText(R.string.duplicate_label);
                 return;
             }
             if (existingLabel != null) {
@@ -438,13 +457,12 @@ public class MailActivity extends AppCompatActivity {
         Button btnCancel = view.findViewById(R.id.btn_cancel);
         Button btnDelete = view.findViewById(R.id.btn_create);  // This is your delete button
 
-        // Set the label name in subtitle, e.g. "Delete the Label [labelName]?"
-        labelSubtitle.setText("Delete the Label \"" + label.getName() + "\"?");
+        labelSubtitle.setText(getString(R.string.delete_the_label, label.getName()));
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         btnDelete.setOnClickListener(v -> {
-            // Delete the label from your ViewModel/DB
+            // Delete the label
             labelViewModel.delete(label);
             dialog.dismiss();
         });

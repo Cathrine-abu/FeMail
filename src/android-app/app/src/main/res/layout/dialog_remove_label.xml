@@ -22,7 +22,7 @@
             android:id="@+id/labelTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Remove Label"
+            android:text="@string/remove_label"
             android:textColor="@android:color/black"
             android:textSize="20sp"
             android:textStyle="bold"
@@ -35,7 +35,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Delete the Label -- ?"
             android:textColor="@android:color/darker_gray"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -59,7 +58,7 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cancel"
+                android:text="@string/cancel"
                 android:textColor="@color/black"
                 app:cornerRadius="32dp" />
 
@@ -70,7 +69,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:backgroundTint="@color/accent"
-                android:text="Delete"
+                android:text="@string/delete"
                 android:textColor="@android:color/white"
                 app:cornerRadius="32dp" />
         </LinearLayout>

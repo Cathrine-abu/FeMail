@@ -6,6 +6,7 @@
     android:layout_height="match_parent">
 
     <!-- Main screen content -->
+    <!-- Side Drawer -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -14,11 +15,11 @@
         <include
             android:id="@+id/topBar"
             layout="@layout/topbar_layout"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Main content (fragments) -->
+        <!-- Main mails fragments -->
         <FrameLayout
             android:id="@+id/fragmentContainer"
             android:layout_width="0dp"
@@ -26,7 +27,7 @@
             app:layout_constraintTop_toBottomOf="@id/topBar"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"/>
 
         <!-- Floating Compose Button -->
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
@@ -36,19 +37,20 @@
             android:layout_margin="24dp"
             android:backgroundTint="@color/accent"
             android:icon="@android:drawable/ic_menu_edit"
-            android:text="Compose"
+            android:text="@string/compose"
             android:textColor="@color/white"
             app:iconTint="@color/white"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Side drawer - מחוץ ל-ConstraintLayout -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigation_view"
         android:layout_width="280dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         app:menu="@menu/sidebar_menu"
-        app:headerLayout="@layout/sidebar_header"/>
+        app:headerLayout="@layout/sidebar_header" />
+
 </androidx.drawerlayout.widget.DrawerLayout>

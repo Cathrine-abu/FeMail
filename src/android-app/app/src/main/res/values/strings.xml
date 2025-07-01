@@ -80,6 +80,40 @@
         <item>@string/male</item>
         <item>@string/other</item>
     </string-array>
+    <string name="gender_female">female</string>
+    <string name="female_icon">♀</string>
+    <string name="gender_male">male</string>
+    <string name="male_icon">♂</string>
+    <string name="profile_birthday">Birthday: %1$s</string>
+    <string name="profile_phone">Phone number: %1$s</string>
+    <string name="profile_end_mail">%1$s@femail.com</string>
+    <string name="profile_hi">Hi, %1$s! %2$s</string>
+    <string name="profile_log_out">Log Out</string>
+    <string name="new_message">New Message</string>
+    <string name="edit_message">Edit Message</string>
+    <string name="mandatory_fields">All fields are mandatory</string>
+    <string name="send_category">send</string>
+    <string name="draft_category">draft</string>
+    <string name="new_label">New Label</string>
+    <string name="new_label_request">Please enter a new label name:</string>
+    <string name="label_name">Label name</string>
+    <string name="edit_label">Edit Label</string>
+    <string name="remove_label">Remove Label</string>
+    <string name="delete_label">Delete Label</string>
+    <string name="save">Save</string>
+    <string name="create">Create</string>
+    <string name="delete">Delete</string>
+    <string name="empty_label">Label name cannot be empty</string>
+    <string name="duplicate_label">Label name already exists</string>
+    <string name="delete_the_label">Delete the Label "%1$s"?</string>
+    <string name="compose">Compose</string>
+    <string name="cancel">Cancel</string>
+    <string name="to">To</string>
+    <string name="subject">Subject</string>
+    <string name="message">Message</string>
+    <string name="save_as_draft">Save as draft</string>
+    <string name="send">Send</string>
+    <string name="search">Search</string>
     <string name="error_username_required">Username is required</string>
     <string name="error_password_required">Password is required</string>
     <string name="error_password_too_short">Password must be at least 8 characters</string>
