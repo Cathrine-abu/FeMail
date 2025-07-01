@@ -271,4 +271,8 @@ public class MailRepository {
     public LiveData<List<MailItem>> getMailsByLabel(String labelName) {
         return mailDao.getMailsByLabel(labelName);
     }
+
+    public LiveData<List<MailItem>> searchMails(String query) {
+        return mailDao.searchMails(query);
+    }
 } 
