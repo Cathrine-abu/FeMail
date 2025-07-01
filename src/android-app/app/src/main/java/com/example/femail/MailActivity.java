@@ -1,6 +1,7 @@
 package com.example.femail;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -13,11 +14,24 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.femail.labels.LabelItem;
 import com.example.femail.labels.LabelViewModel;
-import com.example.femail.MailViewModel;
+import com.example.femail.Mails.MailItem;
+import com.example.femail.Mails.MailViewModel;
+import com.example.femail.MailFragments.InboxFragment;
+import com.example.femail.MailFragments.PrimaryFragment;
+import com.example.femail.MailFragments.SocialFragment;
+import com.example.femail.MailFragments.PromotionsFragment;
+import com.example.femail.MailFragments.UpdatesFragment;
+import com.example.femail.MailFragments.SendFragment;
+import com.example.femail.MailFragments.DraftsFragment;
+import com.example.femail.MailFragments.SpamFragment;
+import com.example.femail.MailFragments.StarredFragment;
+import com.example.femail.MailFragments.TrashFragment;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
@@ -89,8 +103,9 @@ public class MailActivity extends AppCompatActivity {
         });
 
 
-        // MVVM: Observe labels and inject into menu
+        // MVVM: Initialize ViewModels
         labelViewModel = new ViewModelProvider(this).get(LabelViewModel.class);
+        mailViewModel = new ViewModelProvider(this).get(MailViewModel.class);
         labelViewModel.getAllLabels().observe(this, labels -> {
             Menu menu = navigationView.getMenu();
             menu.removeGroup(LABEL_GROUP_ID);
@@ -120,14 +135,53 @@ public class MailActivity extends AppCompatActivity {
         // Handle label clicks
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.create_label) {
+            
+            // Handle mail navigation
+            if (id == R.id.nav_inbox) {
+                navigateToFragment(new InboxFragment());
+                return true;
+            } else if (id == R.id.nav_primary) {
+                navigateToFragment(new PrimaryFragment());
+                return true;
+            } else if (id == R.id.nav_social) {
+                navigateToFragment(new SocialFragment());
+                return true;
+            } else if (id == R.id.nav_promotions) {
+                navigateToFragment(new PromotionsFragment());
+                return true;
+            } else if (id == R.id.nav_updates) {
+                navigateToFragment(new UpdatesFragment());
+                return true;
+            } else if (id == R.id.nav_starred) {
+                navigateToFragment(new StarredFragment());
+                return true;
+            } else if (id == R.id.nav_sent) {
+                navigateToFragment(new SendFragment());
+                return true;
+            } else if (id == R.id.nav_drafts) {
+                navigateToFragment(new DraftsFragment());
+                return true;
+            } else if (id == R.id.nav_spam) {
+                navigateToFragment(new SpamFragment());
+                return true;
+            } else if (id == R.id.nav_trash) {
+                navigateToFragment(new TrashFragment());
+                return true;
+            } else if (id == R.id.create_label) {
                 showCreateOrEditLabelPopup(null);
                 return true;
             }
-//            String labelName = item.getTitle().toString();
-//            drawerLayout.closeDrawers();
+            
+            // Handle label clicks (if any labels are clicked)
+            String labelName = item.getTitle().toString();
+            drawerLayout.closeDrawers();
             return true;
         });
+
+        // Set initial fragment (Inbox by default)
+        if (savedInstanceState == null) {
+            navigateToFragment(new InboxFragment());
+        }
     }
 
     private void showProfilePopup() {
@@ -180,35 +234,103 @@ public class MailActivity extends AppCompatActivity {
         TextView mailTitle = view.findViewById(R.id.mailTitle);
         Button btnDraft = view.findViewById(R.id.btnDraft);
         Button btnCreate = view.findViewById(R.id.btnSend);
+       // android.widget.Spinner categorySpinner = view.findViewById(R.id.categorySpinner);
+
+        // Set up category spinner
+        String[] categories = {"primary", "social", "promotions", "updates"};
+        android.widget.ArrayAdapter<String> spinnerAdapter = new android.widget.ArrayAdapter<>(this, android.R.layout.simple_spinner_item, categories);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        //categorySpinner.setAdapter(spinnerAdapter);
 
         // Set up for edit mode
         if (existingMail != null) {
             mailTitle.setText("Edit Message");
+            inputTo.setText(existingMail.to != null && !existingMail.to.isEmpty() ? existingMail.to.get(0) : "");
+            inputSubject.setText(existingMail.subject);
+            inputBody.setText(existingMail.body);
         } else {
             mailTitle.setText("New Message");
         }
 
-        // Draft button
-//        btnDraft.setOnClickListener(v -> dialog.dismiss());
+        // Remove all categorySpinner references and duplicate category declarations
+        String category = "primary";
 
-        // Create/Save button logic
+        // Draft button - save as draft
+        btnDraft.setOnClickListener(v -> {
+            String mailTo = inputTo.getText().toString().trim();
+            String mailSubject = inputSubject.getText().toString().trim();
+            String mailBody = inputBody.getText().toString().trim();
+
+            if (existingMail != null) {
+                // Update existing mail as draft
+                String currentTime = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date());
+                existingMail.to = mailTo.isEmpty() ? null : java.util.List.of(mailTo);
+                existingMail.subject = mailSubject;
+                existingMail.body = mailBody;
+                existingMail.time = currentTime;
+                existingMail.isDraft = true;
+                existingMail.direction = java.util.List.of("draft");
+                existingMail.category = category;
+                mailViewModel.update(existingMail);
+            } else {
+                // Create new draft mail
+                String currentTime = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date());
+                MailItem newMail = new MailItem(
+                    String.valueOf(System.currentTimeMillis()),
+                    mailSubject,
+                    mailBody,
+                    "me", // from
+                    mailTo.isEmpty() ? null : java.util.List.of(mailTo),
+                    currentTime,
+                    false, false, false, true, false, // isStarred, isRead, isSpam, isDraft, isDeleted
+                    java.util.List.of("draft"),
+                    "current_user", "current_user", null, category, false
+                );
+                mailViewModel.insert(newMail);
+            }
+            Toast.makeText(this, "Saved as draft", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        // Send button - save as sent mail
         btnCreate.setOnClickListener(v -> {
             String mailTo = inputTo.getText().toString().trim();
             String mailSubject = inputSubject.getText().toString().trim();
             String mailBody = inputBody.getText().toString().trim();
-//            if (mailTo.isEmpty()) {
-//                mailError.setText("All fields are mandatory");
-//            }
+
+            if (mailTo.isEmpty() || mailSubject.isEmpty()) {
+                Toast.makeText(this, "To and Subject are required", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             if (existingMail != null) {
-                // Update the existing label
-//                existingMail.setName(labelName);
-//                mailViewModel.update(existingMail);
+                // Update existing mail as sent
+                String currentTime = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date());
+                existingMail.to = java.util.List.of(mailTo);
+                existingMail.subject = mailSubject;
+                existingMail.body = mailBody;
+                existingMail.time = currentTime;
+                existingMail.isDraft = false;
+                existingMail.direction = java.util.List.of("sent");
+                existingMail.category = category;
+                mailViewModel.update(existingMail);
             } else {
-                // Create new label
-//                MailItem newMail = new MailItem(mailTo, mailSubject, mailBody);
-//                labelViewModel.insert(newMail);
+                // Create new sent mail
+                String currentTime = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date());
+                MailItem newMail = new MailItem(
+                    String.valueOf(System.currentTimeMillis()),
+                    mailSubject,
+                    mailBody,
+                    "me", // from
+                    java.util.List.of(mailTo),
+                    currentTime,
+                    false, true, false, false, false, // isStarred, isRead, isSpam, isDraft, isDeleted
+                    java.util.List.of("sent"),
+                    "current_user", "current_user", null, category, false
+                );
+                mailViewModel.insert(newMail);
             }
+            Toast.makeText(this, "Mail sent", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
         dialog.show();
@@ -328,6 +450,18 @@ public class MailActivity extends AppCompatActivity {
         });
 
         dialog.show();
+    }
+
+    /**
+     * Navigate to a specific fragment
+     */
+    private void navigateToFragment(Fragment fragment) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
+        drawerLayout.closeDrawers();
     }
 
 }

@@ -1,0 +1,6 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/action_back" android:title="Back" android:icon="@drawable/ic_arrow_back" android:showAsAction="always" />
+    <item android:id="@+id/action_select_all" android:title="Select all" android:icon="@drawable/ic_check_circle" android:showAsAction="always" />
+    <item android:id="@+id/action_trash" android:title="Delete" android:icon="@drawable/ic_trash" android:showAsAction="always" />
+    <item android:id="@+id/action_more" android:title="More" android:icon="@drawable/ic_more" android:showAsAction="always" />
+</menu> 

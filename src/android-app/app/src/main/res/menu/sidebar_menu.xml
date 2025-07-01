@@ -37,6 +37,41 @@
             android:checkable="true"
             android:icon="@drawable/ic_trash"
             android:title="Trash" />
+
+        <!-- Divider line -->
+        <item
+            android:id="@+id/menu_divider"
+            android:title=""
+            android:enabled="false"
+            android:icon="@null"
+            app:showAsAction="never"
+            android:checkable="false"
+            android:actionLayout="@layout/menu_divider" />
+
+        <!-- Category items below divider -->
+        <item
+            android:id="@+id/nav_primary"
+            android:checkable="true"
+            android:icon="@drawable/ic_primary"
+            android:title="Primary" />
+
+        <item
+            android:id="@+id/nav_social"
+            android:checkable="true"
+            android:icon="@drawable/ic_social"
+            android:title="Social" />
+
+        <item
+            android:id="@+id/nav_promotions"
+            android:checkable="true"
+            android:icon="@drawable/ic_promotions"
+            android:title="Promotions" />
+
+        <item
+            android:id="@+id/nav_updates"
+            android:checkable="true"
+            android:icon="@drawable/ic_updates"
+            android:title="Updates" />
     </group>
 
     <group android:id="@+id/group_create_label">

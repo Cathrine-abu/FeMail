@@ -1,4 +1,4 @@
-package com.example.femail;
+package com.example.femail.Mails;
 
 import android.content.Context;
 import androidx.room.Database;
@@ -6,8 +6,7 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
-import com.example.femail.MailDao;
-import com.example.femail.MailItem;
+import com.example.femail.Converters;
 import com.example.femail.User;
 import com.example.femail.UserDao;
 
@@ -33,4 +32,4 @@ public abstract class MailDatabase extends RoomDatabase {
         }
         return INSTANCE;
     }
-}
+} 

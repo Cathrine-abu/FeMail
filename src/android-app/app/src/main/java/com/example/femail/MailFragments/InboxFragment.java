@@ -11,12 +11,14 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.femail.MailAdapter;
-import com.example.femail.MailItem;
-import com.example.femail.MailViewModel;
+import com.example.femail.Mails.MailAdapter;
+import com.example.femail.Mails.MailItem;
+import com.example.femail.Mails.MailViewModel;
 import com.example.femail.R;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class InboxFragment extends Fragment {
 
@@ -35,7 +37,10 @@ public class InboxFragment extends Fragment {
 
         RecyclerView recyclerView = view.findViewById(R.id.mailListView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mailAdapter = new MailAdapter(getContext(), new ArrayList<>());
+        mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), null, (mail, position) -> {
+            // Update the mail in the database when star is clicked
+            mailViewModel.update(mail);
+        });
         recyclerView.setAdapter(mailAdapter);
 
         mailViewModel = new ViewModelProvider(requireActivity()).get(MailViewModel.class);

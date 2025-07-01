@@ -19,22 +19,22 @@ import com.example.femail.R;
 import java.util.ArrayList;
 import java.util.List;
 
-public class StarredFragment extends Fragment {
+public class PromotionsFragment extends Fragment {
 
     private MailViewModel mailViewModel;
     private MailAdapter mailAdapter;
-    private RecyclerView recyclerView;
 
-    public StarredFragment() {}
+    public PromotionsFragment() {}
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.layout_mail_list, container, false);
 
         TextView title = view.findViewById(R.id.mailListTitle);
-        title.setText("Starred");
+        title.setText("Promotions");
 
-        recyclerView = view.findViewById(R.id.mailListView);
+        RecyclerView recyclerView = view.findViewById(R.id.mailListView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), null, (mail, position) -> {
             // Update the mail in the database when star is clicked
@@ -43,11 +43,10 @@ public class StarredFragment extends Fragment {
         recyclerView.setAdapter(mailAdapter);
 
         mailViewModel = new ViewModelProvider(requireActivity()).get(MailViewModel.class);
-
-        mailViewModel.getStarredMails().observe(getViewLifecycleOwner(), mails -> {
+        mailViewModel.getPromotionsMails().observe(getViewLifecycleOwner(), mails -> {
             mailAdapter.setMailList(mails);
         });
 
         return view;
     }
-}
+} 

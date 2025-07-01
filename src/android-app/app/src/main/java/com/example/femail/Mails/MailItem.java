@@ -1,4 +1,4 @@
-package com.example.femail;
+package com.example.femail.Mails;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
@@ -84,4 +84,4 @@ public class MailItem {
     public String getTime() { return time; }
     public boolean getStarred() { return isStarred; }
     public String getSender() { return from; }
-}
+} 

@@ -1,18 +1,20 @@
-package com.example.femail;
+package com.example.femail.Mails;
 
 import android.content.Context;
 import android.content.Intent;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
+import com.example.femail.R;
+import com.example.femail.ViewMail;
+
 import java.util.List;
 
 public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder> {
@@ -20,15 +22,47 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
     private List<MailItem> mailList;
     private Context context;
     private OnMailClickListener mailClickListener;
+    private OnStarClickListener starClickListener;
+    private boolean selectionMode = false;
+    private SelectionListener selectionListener;
+
+    public interface SelectionListener {
+        void onSelectionModeChanged(boolean enabled, int selectedCount);
+    }
+    public void setSelectionListener(SelectionListener listener) {
+        this.selectionListener = listener;
+    }
+    public void clearSelection() {
+        for (MailItem mail : mailList) mail.isSelected = false;
+        selectionMode = false;
+        notifyDataSetChanged();
+        if (selectionListener != null) selectionListener.onSelectionModeChanged(false, 0);
+    }
+    public void selectAll() {
+        for (MailItem mail : mailList) mail.isSelected = true;
+        selectionMode = true;
+        notifyDataSetChanged();
+        if (selectionListener != null) selectionListener.onSelectionModeChanged(true, mailList.size());
+    }
+    public List<MailItem> getSelectedMails() {
+        List<MailItem> selected = new java.util.ArrayList<>();
+        for (MailItem mail : mailList) if (mail.isSelected) selected.add(mail);
+        return selected;
+    }
 
     public MailAdapter(Context context, List<MailItem> mailList) {
         this(context, mailList, null);
     }
 
     public MailAdapter(Context context, List<MailItem> mailList, OnMailClickListener listener) {
+        this(context, mailList, listener, null);
+    }
+
+    public MailAdapter(Context context, List<MailItem> mailList, OnMailClickListener mailListener, OnStarClickListener starListener) {
         this.context = context;
         this.mailList = mailList;
-        this.mailClickListener = listener;
+        this.mailClickListener = mailListener;
+        this.starClickListener = starListener;
     }
 
     public void setMailList(List<MailItem> mails) {
@@ -55,14 +89,29 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
         holder.checkView.setVisibility(mail.isSelected ? View.VISIBLE : View.GONE);
         holder.profileView.setVisibility(mail.isSelected ? View.GONE : View.VISIBLE);
 
-        holder.profileContainer.setOnClickListener(v -> {
+        View.OnClickListener selectListener = v -> {
             mail.isSelected = !mail.isSelected;
+            Toast.makeText(context, "Clicked: " + mail.subject, Toast.LENGTH_SHORT).show(); // Debug
+            if (mail.isSelected) selectionMode = true;
+            else {
+                boolean anySelected = false;
+                for (MailItem m : mailList) if (m.isSelected) anySelected = true;
+                selectionMode = anySelected;
+            }
+            Toast.makeText(context, "Adapter: Notifying selectionListener: " + selectionMode + ", " + getSelectedMails().size(), Toast.LENGTH_SHORT).show();
+            if (selectionListener != null)
+                selectionListener.onSelectionModeChanged(selectionMode, getSelectedMails().size());
             notifyItemChanged(position);
-        });
+        };
+        holder.profileContainer.setOnClickListener(selectListener);
+        holder.profileView.setOnClickListener(selectListener);
 
         holder.starView.setOnClickListener(v -> {
             mail.isStarred = !mail.isStarred;
             notifyItemChanged(position);
+            if (starClickListener != null) {
+                starClickListener.onStarClick(mail, position);
+            }
         });
 
         holder.itemView.setOnClickListener(v -> {
@@ -75,6 +124,14 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
                     intent.putExtra("mail_body", mail.body);
                     intent.putExtra("mail_time", mail.time);
                     intent.putExtra("mail_from", mail.from);
+                    // Add the "To" information
+                    String toAddress = "";
+                    if (mail.to != null && !mail.to.isEmpty()) {
+                        toAddress = mail.to.get(0); // Get the first recipient
+                    }
+                    intent.putExtra("mail_to", toAddress);
+                    intent.putExtra("starred", mail.isStarred);
+                    intent.putExtra("mail_id", mail.id);
                     context.startActivity(intent);
                 }
             }
@@ -88,6 +145,10 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
 
     public interface OnMailClickListener {
         void onMailClick(MailItem mail);
+    }
+
+    public interface OnStarClickListener {
+        void onStarClick(MailItem mail, int position);
     }
 
     public static class MailViewHolder extends RecyclerView.ViewHolder {

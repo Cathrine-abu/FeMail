@@ -1,14 +1,12 @@
-package com.example.femail;
+package com.example.femail.Mails;
 
 import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class MailViewModel extends AndroidViewModel {
     private MailRepository repository;
@@ -53,6 +51,23 @@ public class MailViewModel extends AndroidViewModel {
         return repository.getTrashMails();
     }
 
+    // New category methods
+    public LiveData<List<MailItem>> getPrimaryMails() {
+        return repository.getPrimaryMails();
+    }
+
+    public LiveData<List<MailItem>> getSocialMails() {
+        return repository.getSocialMails();
+    }
+
+    public LiveData<List<MailItem>> getPromotionsMails() {
+        return repository.getPromotionsMails();
+    }
+
+    public LiveData<List<MailItem>> getUpdatesMails() {
+        return repository.getUpdatesMails();
+    }
+
     // Error and loading state getters
     public LiveData<String> getErrorMessage() {
         return errorMessage;
@@ -88,6 +103,17 @@ public class MailViewModel extends AndroidViewModel {
         }
     }
 
+    public void update(MailItem mail) {
+        isLoading.setValue(true);
+        try {
+            repository.update(mail);
+            isLoading.setValue(false);
+        } catch (Exception e) {
+            errorMessage.setValue("Failed to update mail: " + e.getMessage());
+            isLoading.setValue(false);
+        }
+    }
+
     public void deleteAll() {
         isLoading.setValue(true);
         try {
@@ -98,4 +124,8 @@ public class MailViewModel extends AndroidViewModel {
             isLoading.setValue(false);
         }
     }
-}
+
+    public void deleteMailPermanently(String token, String userId, String mailId) {
+        repository.deleteMailPermanently(token, userId, mailId);
+    }
+} 
