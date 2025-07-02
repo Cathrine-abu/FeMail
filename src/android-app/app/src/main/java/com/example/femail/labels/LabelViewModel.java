@@ -15,11 +15,10 @@ public class LabelViewModel extends AndroidViewModel {
     public LabelViewModel(@NonNull Application application) {
         super(application);
         repository = new LabelRepository(application);
-        allLabels = repository.getAllLabels();
     }
 
-    public LiveData<List<LabelItem>> getAllLabels() {
-        return allLabels;
+    public LiveData<List<LabelItem>> getAllLabels(int UserId) {
+        return repository.getAllLabels(UserId);
     }
 
     public void insert(LabelItem label) {

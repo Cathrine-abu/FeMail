@@ -15,11 +15,10 @@ public class LabelRepository {
     public LabelRepository(Application application) {
         LabelDatabase db = LabelDatabase.getDatabase(application);
         labelDao = db.labelDao();
-        allLabels = labelDao.getAllLabels();
     }
 
-    public LiveData<List<LabelItem>> getAllLabels() {
-        return allLabels;
+    public LiveData<List<LabelItem>> getAllLabels(int useId) {
+        return labelDao.getAllLabels(useId);
     }
 
     public void insert(LabelItem label) {
