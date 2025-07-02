@@ -34,14 +34,18 @@ import com.example.femail.MailFragments.DraftsFragment;
 import com.example.femail.MailFragments.SpamFragment;
 import com.example.femail.MailFragments.StarredFragment;
 import com.example.femail.MailFragments.TrashFragment;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.example.femail.labels.LabelItem;
-import com.example.femail.labels.LabelViewModel;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.example.femail.AuthPrefs;
+import com.google.android.material.switchmaterial.SwitchMaterial;
+import androidx.appcompat.app.AppCompatDelegate;
+import java.util.Collections;
+import java.util.List;
 
 public class MailActivity extends AppCompatActivity {
+    private int UserId = 1;
+    private List<LabelItem> cachedLabels = Collections.emptyList();
+    private SwitchMaterial darkModeSwitch;
     private EditText searchInput;
     private ImageView profilePic, clearSearch, hamburgerMenu;
     private DrawerLayout drawerLayout;
@@ -51,12 +55,20 @@ public class MailActivity extends AppCompatActivity {
     private NavigationView navigationView;
     private final int LABEL_GROUP_ID = R.id.group_labels;
 
-    @SuppressLint("NonConstantResourceId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mail);
 
+        // Dark/Light mode
+        darkModeSwitch = findViewById(R.id.darkModeSwitch);
+        darkModeSwitch.setOnClickListener(v -> {
+            if (darkModeSwitch.isChecked()) {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            } else {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            }
+        });
 
         searchInput = findViewById(R.id.searchInput);
         profilePic = findViewById(R.id.profilePic);
@@ -112,29 +124,32 @@ public class MailActivity extends AppCompatActivity {
         // MVVM: Observe labels and inject into menu
         labelViewModel = new ViewModelProvider(this).get(LabelViewModel.class);
         mailViewModel = new ViewModelProvider(this).get(MailViewModel.class);
-        labelViewModel.getAllLabels().observe(this, labels -> {
+        labelViewModel.getAllLabels(UserId).observe(this, labels -> {
+            cachedLabels = (labels != null) ? labels : Collections.emptyList();
             Menu menu = navigationView.getMenu();
             menu.removeGroup(LABEL_GROUP_ID);
 
-            for (LabelItem label : labels) {
-                MenuItem menuItem = menu.add(LABEL_GROUP_ID, Menu.NONE, Menu.NONE, label.getName())
-                        .setIcon(R.drawable.ic_double_arrow)
-                        .setCheckable(true);
-                menuItem.setActionView(R.layout.menu_item_action_icon);
+            if (labels != null) {
+                for (LabelItem label : labels) {
+                    MenuItem menuItem = menu.add(LABEL_GROUP_ID, Menu.NONE, Menu.NONE, label.getName())
+                            .setIcon(R.drawable.ic_double_arrow)
+                            .setCheckable(true);
+                    menuItem.setActionView(R.layout.menu_item_action_icon);
 
-                // Handle clicks on the icon (action view)
-                View actionView = menuItem.getActionView();
-                actionView.setTag(label);
+                    // Handle clicks on the icon (action view)
+                    View actionView = menuItem.getActionView();
+                    actionView.setTag(label);
 
-                ImageView icon = actionView.findViewById(R.id.right_icon);
-                icon.setOnClickListener(v -> {
-                    showLabelOptionPopup(v);
-                });
+                    ImageView icon = actionView.findViewById(R.id.right_icon);
+                    icon.setOnClickListener(v -> {
+                        showLabelOptionPopup(v);
+                    });
 
-                // Handle clicks on the menu item text itself
-                menuItem.setOnMenuItemClickListener(item -> {
-                    return true;
-                });
+                    // Handle clicks on the menu item text itself
+                    menuItem.setOnMenuItemClickListener(item -> {
+                        return true;
+                    });
+                }
             }
         });
 
@@ -280,6 +295,10 @@ public class MailActivity extends AppCompatActivity {
             String mailTo = inputTo.getText().toString().trim();
             String mailSubject = inputSubject.getText().toString().trim();
             String mailBody = inputBody.getText().toString().trim();
+            if (mailTo.isEmpty() || mailSubject.isEmpty() || mailBody.isEmpty()) {
+                mailError.setText(R.string.mandatory_fields);
+                return;
+            }
 
             if (existingMail != null) {
                 // Update existing mail as draft
@@ -416,12 +435,15 @@ public class MailActivity extends AppCompatActivity {
 
             // Check for duplicates
             boolean isDuplicate = false;
-            for (LabelItem item : labelViewModel.getAllLabels().getValue()) {
-                // If it's an existing label, allow the same name only if it's the same item
-                if (item.getName().equalsIgnoreCase(labelName)) {
-                    if (existingLabel == null || item.getId() != existingLabel.getId()) {
-                        isDuplicate = true;
-                        break;
+            List<LabelItem> labels = cachedLabels;
+            if (labels != null) {
+                for (LabelItem item : labels) {
+                    // If it's an existing label, allow the same name only if it's the same item
+                    if (item.getName().equalsIgnoreCase(labelName)) {
+                        if (existingLabel == null || item.getId() != existingLabel.getId()) {
+                            isDuplicate = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -436,7 +458,7 @@ public class MailActivity extends AppCompatActivity {
                 labelViewModel.update(existingLabel);
             } else {
                 // Create new label
-                LabelItem newLabel = new LabelItem(labelName);
+                LabelItem newLabel = new LabelItem(UserId, labelName);
                 labelViewModel.insert(newLabel);
             }
             dialog.dismiss();
