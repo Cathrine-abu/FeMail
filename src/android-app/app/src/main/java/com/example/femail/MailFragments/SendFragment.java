@@ -15,6 +15,7 @@ import com.example.femail.Mails.MailAdapter;
 import com.example.femail.Mails.MailItem;
 import com.example.femail.Mails.MailViewModel;
 import com.example.femail.R;
+import com.example.femail.AuthPrefs;
 
 import java.util.ArrayList;
 
@@ -34,16 +35,17 @@ public class SendFragment extends Fragment {
 
         RecyclerView recyclerView = view.findViewById(R.id.mailListView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), null, (mail, position) -> {
+        mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), "sent", null, (mail, position) -> {
             // Update the mail in the database when star is clicked
             mailViewModel.update(mail);
         });
         recyclerView.setAdapter(mailAdapter);
 
         mailViewModel = new ViewModelProvider(requireActivity()).get(MailViewModel.class);
-        mailViewModel.getSentMails().observe(getViewLifecycleOwner(), mails -> {
-            mailAdapter.setMailList(mails);
-        });
+        mailViewModel.getSentMails(AuthPrefs.getUserId(requireContext()))
+            .observe(getViewLifecycleOwner(), mails -> {
+                mailAdapter.setMailList(mails);
+            });
 
         return view;
     }

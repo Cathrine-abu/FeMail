@@ -24,6 +24,7 @@ exports.sendMail = async (req, res) => {
     const { subject, body, from, to, isDraft, direction } = req.body;
     const owner = req.header('user-id');
 
+    // Basic validation
     if (!isDraft && (!subject || !body || !from || !to || !owner)) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -65,60 +66,68 @@ exports.sendMail = async (req, res) => {
     const timestamp = new Date().toISOString();
     const groupId = `${Date.now()}_${from}_${Math.floor(Math.random() * 100000)}`;
 
-    try {
-        const fromUser = await getUserById(from);
+    const senderUser = getUserById(from);
 
-        if (!isDraft) {
-            for (const recipient of recipients) {
-                const recipientUser = await findUserByUsername(recipient);
-                if (!recipientUser) continue;
-                if (recipientUser.id.toString() === from) continue;
+    if (!isDraft) {
+        recipients.forEach((recipient) => {
+            const recipientUser = findUserByUsername(recipient);
+            if (!recipientUser) return;
+            if (recipientUser.id.toString() === from) return;
 
-                await storeMails.createMail({
-                    subject,
-                    body,
-                    from: fromUser.username,
-                    to: recipient,
-                    user: recipientUser.id.toString(),
-                    owner: recipientUser.id.toString(),
-                    direction: ['received'],
-                    timestamp,
-                    isDeleted: false,
-                    isDraft: false,
-                    isStarred: false,
-                    isSpam,
-                    groupId: (fromUser.username === recipient) ? groupId : null,
-                    isRead: false
-                });
-            }
-        }
-
-        const sentMail = await storeMails.createMail({
-            subject,
-            body,
-            from: fromUser.username,
-            to: recipients,
-            user: from,
-            owner: from,
-            direction: Array.isArray(direction) ? direction : [direction || "sent"],
-            timestamp,
-            isDeleted: false,
-            isDraft: isDraft || false,
-            isStarred: false,
-            isSpam,
-            groupId: (recipients.includes(fromUser.username)) ? groupId : null,
-            isRead: false
+            storeMails.createMail({
+                subject,
+                body,
+                from: senderUser.username,
+                to: recipient,
+                user: recipientUser.id.toString(),
+                owner: recipientUser.id.toString(),
+                direction: ['received'],
+                timestamp,
+                isDeleted: false,
+                isDraft: false,
+                isStarred: false,
+                isSpam,
+                groupId: (senderUser.username === recipient) ? groupId : null,
+                isRead: false
+            });
         });
-
-        return res.status(201).location(`/api/mails/${sentMail.id}`).json({
-            id: `${sentMail.id}`,
-            isSpam: `${sentMail.isSpam}`,
-            timestamp: `${sentMail.timestamp}`
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
     }
+
+    const isSelfMail =
+        !isDraft &&
+        recipients.length === 1 &&
+        recipients[0] === senderUser.username;
+
+    const finalDirection = isSelfMail
+        ? ['sent', 'received']
+        : Array.isArray(direction)
+            ? direction
+            : [direction || "sent"];
+
+    const sentMail = storeMails.createMail({
+        subject,
+        body,
+        from: senderUser.username,
+        to: recipients,
+        user: from,
+        owner: from,
+        direction: finalDirection,
+        timestamp,
+        isDeleted: false,
+        isDraft: isDraft || false,
+        isStarred: false,
+        isSpam,
+        groupId: isSelfMail ? groupId : null,
+        isRead: false
+    });
+
+    return res.status(201).location(`/api/mails/${sentMail.id}`).json({
+        id: `${sentMail.id}`,
+        isSpam: `${sentMail.isSpam}`,
+        timestamp: `${sentMail.timestamp}`
+    });
 };
+
 
 // GET /api/mails/:id
 exports.getMailById = async (req, res) => {

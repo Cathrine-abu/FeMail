@@ -1,6 +1,7 @@
 package com.example.femail.Mails;
 
 import android.app.Application;
+import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
@@ -9,8 +10,7 @@ import androidx.lifecycle.MutableLiveData;
 import java.util.List;
 
 public class MailViewModel extends AndroidViewModel {
-    private MailRepository repository;
-    private LiveData<List<MailItem>> allMails;
+    private final MailRepository repository;
     
     // Error and loading state management
     private MutableLiveData<String> errorMessage = new MutableLiveData<>();
@@ -19,53 +19,58 @@ public class MailViewModel extends AndroidViewModel {
     public MailViewModel(@NonNull Application application) {
         super(application);
         repository = new MailRepository(application);
-        allMails = repository.getAllMails();
     }
 
-    public LiveData<List<MailItem>> getAllMails() {
-        return allMails;
+    public LiveData<List<MailItem>> getAllMails(String userId) {
+        return repository.getAllMails(userId);
     }
 
-    // New specific mail type methods
-    public LiveData<List<MailItem>> getInboxMails() {
-        return repository.getInboxMails();
+    public LiveData<List<MailItem>> getInboxMails(String userId) {
+        return repository.getInboxMails(userId);
     }
 
-    public LiveData<List<MailItem>> getSentMails() {
-        return repository.getSentMails();
+    public LiveData<List<MailItem>> getSentMails(String userId) {
+        return repository.getSentMails(userId);
     }
 
-    public LiveData<List<MailItem>> getDraftMails() {
-        return repository.getDraftMails();
+    public LiveData<List<MailItem>> getDraftMails(String userId) {
+        return repository.getDraftMails(userId);
     }
 
-    public LiveData<List<MailItem>> getSpamMails() {
-        return repository.getSpamMails();
+    public LiveData<List<MailItem>> getSpamMails(String userId) {
+        return repository.getSpamMails(userId);
     }
 
-    public LiveData<List<MailItem>> getStarredMails() {
-        return repository.getStarredMails();
+    public LiveData<List<MailItem>> getStarredMails(String userId) {
+        return repository.getStarredMails(userId);
     }
 
-    public LiveData<List<MailItem>> getTrashMails() {
-        return repository.getTrashMails();
+    public LiveData<List<MailItem>> getTrashMails(String userId) {
+        return repository.getTrashMails(userId);
     }
 
-    // New category methods
-    public LiveData<List<MailItem>> getPrimaryMails() {
-        return repository.getPrimaryMails();
+    public LiveData<List<MailItem>> getPrimaryMails(String userId) {
+        return repository.getPrimaryMails(userId);
     }
 
-    public LiveData<List<MailItem>> getSocialMails() {
-        return repository.getSocialMails();
+    public LiveData<List<MailItem>> getSocialMails(String userId) {
+        return repository.getSocialMails(userId);
     }
 
-    public LiveData<List<MailItem>> getPromotionsMails() {
-        return repository.getPromotionsMails();
+    public LiveData<List<MailItem>> getPromotionsMails(String userId) {
+        return repository.getPromotionsMails(userId);
     }
 
-    public LiveData<List<MailItem>> getUpdatesMails() {
-        return repository.getUpdatesMails();
+    public LiveData<List<MailItem>> getUpdatesMails(String userId) {
+        return repository.getUpdatesMails(userId);
+    }
+
+    public LiveData<List<MailItem>> getMailsByLabel(String labelName, String userId) {
+        return repository.getMailsByLabel(labelName, userId);
+    }
+
+    public LiveData<List<MailItem>> searchMails(String query, String userId) {
+        return repository.searchMails(query, userId);
     }
 
     // Error and loading state getters
@@ -82,58 +87,26 @@ public class MailViewModel extends AndroidViewModel {
     }
 
     public void insert(MailItem mail) {
-        isLoading.setValue(true);
-        try {
-            repository.insert(mail);
-            isLoading.setValue(false);
-        } catch (Exception e) {
-            errorMessage.setValue("Failed to insert mail: " + e.getMessage());
-            isLoading.setValue(false);
-        }
+        repository.insert(mail);
     }
 
     public void delete(MailItem mail) {
-        isLoading.setValue(true);
-        try {
-            repository.delete(mail);
-            isLoading.setValue(false);
-        } catch (Exception e) {
-            errorMessage.setValue("Failed to delete mail: " + e.getMessage());
-            isLoading.setValue(false);
-        }
+        repository.delete(mail);
     }
 
     public void update(MailItem mail) {
-        isLoading.setValue(true);
-        try {
-            repository.update(mail);
-            isLoading.setValue(false);
-        } catch (Exception e) {
-            errorMessage.setValue("Failed to update mail: " + e.getMessage());
-            isLoading.setValue(false);
-        }
+        repository.update(mail);
     }
 
     public void deleteAll() {
-        isLoading.setValue(true);
-        try {
-            repository.deleteAll();
-            isLoading.setValue(false);
-        } catch (Exception e) {
-            errorMessage.setValue("Failed to delete all mails: " + e.getMessage());
-            isLoading.setValue(false);
-        }
+        repository.deleteAll();
     }
 
     public void deleteMailPermanently(String token, String userId, String mailId) {
         repository.deleteMailPermanently(token, userId, mailId);
     }
 
-    public LiveData<List<MailItem>> getMailsByLabel(String labelName) {
-        return repository.getMailsByLabel(labelName);
-    }
-
-    public LiveData<List<MailItem>> searchMails(String query) {
-        return repository.searchMails(query);
+    public void sendMailToServer(Context context, String token, String userId, MailItem mail) {
+        repository.sendMailToServer(token, userId, mail);
     }
 } 

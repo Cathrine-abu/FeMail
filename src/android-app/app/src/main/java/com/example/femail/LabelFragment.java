@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.femail.Mails.MailAdapter;
 import com.example.femail.Mails.MailItem;
 import com.example.femail.Mails.MailViewModel;
+import com.example.femail.AuthPrefs;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +37,7 @@ public class LabelFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_label, container, false);
         recyclerView = view.findViewById(R.id.recycler_view_label_mails);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mailAdapter = new MailAdapter(getContext(), new ArrayList<>());
+        mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), "label");
         recyclerView.setAdapter(mailAdapter);
         return view;
     }
@@ -49,9 +50,10 @@ public class LabelFragment extends Fragment {
         }
         mailViewModel = new ViewModelProvider(requireActivity()).get(MailViewModel.class);
         if (labelName != null) {
-            mailViewModel.getMailsByLabel(labelName).observe(getViewLifecycleOwner(), mails -> {
-                mailAdapter.setMailList(mails != null ? mails : new ArrayList<>());
-            });
+            mailViewModel.getMailsByLabel(labelName, AuthPrefs.getUserId(requireContext()))
+                .observe(getViewLifecycleOwner(), mails -> {
+                    mailAdapter.setMailList(mails != null ? mails : new ArrayList<>());
+                });
         }
     }
 } 

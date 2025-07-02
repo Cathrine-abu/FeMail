@@ -25,6 +25,7 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
     private OnStarClickListener starClickListener;
     private boolean selectionMode = false;
     private SelectionListener selectionListener;
+    private String sourceFragment;
 
     public interface SelectionListener {
         void onSelectionModeChanged(boolean enabled, int selectedCount);
@@ -50,17 +51,18 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
         return selected;
     }
 
-    public MailAdapter(Context context, List<MailItem> mailList) {
-        this(context, mailList, null);
+    public MailAdapter(Context context, List<MailItem> mailList, String sourceFragment) {
+        this(context, mailList, sourceFragment, null, null);
     }
 
-    public MailAdapter(Context context, List<MailItem> mailList, OnMailClickListener listener) {
-        this(context, mailList, listener, null);
+    public MailAdapter(Context context, List<MailItem> mailList, String sourceFragment, OnMailClickListener listener) {
+        this(context, mailList, sourceFragment, listener, null);
     }
 
-    public MailAdapter(Context context, List<MailItem> mailList, OnMailClickListener mailListener, OnStarClickListener starListener) {
+    public MailAdapter(Context context, List<MailItem> mailList, String sourceFragment, OnMailClickListener mailListener, OnStarClickListener starListener) {
         this.context = context;
         this.mailList = mailList;
+        this.sourceFragment = sourceFragment;
         this.mailClickListener = mailListener;
         this.starClickListener = starListener;
     }
@@ -81,7 +83,15 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
     public void onBindViewHolder(@NonNull MailViewHolder holder, int position) {
         MailItem mail = mailList.get(position);
         holder.subjectView.setText(mail.subject);
-        holder.timeView.setText(mail.time);
+        // Show only the clock time (HH:mm) regardless of stored format
+        try {
+            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+            java.util.Date date = inputFormat.parse(mail.time);
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault());
+            holder.timeView.setText(outputFormat.format(date));
+        } catch (Exception e) {
+            holder.timeView.setText(mail.time); // fallback
+        }
         holder.starView.setImageResource(mail.isStarred ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
         holder.fromView.setText(mail.from);
         holder.bodyView.setText(mail.body);
@@ -132,6 +142,12 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
                     intent.putExtra("mail_to", toAddress);
                     intent.putExtra("starred", mail.isStarred);
                     intent.putExtra("mail_id", mail.id);
+                    intent.putExtra("source_fragment", sourceFragment);
+                    intent.putExtra("isSpam", mail.isSpam);
+                    intent.putExtra("isDeleted", mail.isDeleted);
+                    if (mail.direction != null) {
+                        intent.putStringArrayListExtra("direction", new java.util.ArrayList<>(mail.direction));
+                    }
                     context.startActivity(intent);
                 }
             }
@@ -149,6 +165,18 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
 
     public interface OnStarClickListener {
         void onStarClick(MailItem mail, int position);
+    }
+
+    public void deleteSelected() {
+        List<MailItem> toRemove = new java.util.ArrayList<>();
+        for (MailItem mail : mailList) {
+            if (mail.isSelected) {
+                toRemove.add(mail);
+            }
+        }
+        mailList.removeAll(toRemove);
+        if (selectionListener != null) selectionListener.onSelectionModeChanged(false, 0);
+        notifyDataSetChanged();
     }
 
     public static class MailViewHolder extends RecyclerView.ViewHolder {

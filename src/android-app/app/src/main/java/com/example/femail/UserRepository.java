@@ -58,6 +58,45 @@ public class UserRepository {
                     JSONObject resp = new JSONObject(response.toString());
                     token = resp.optString("token", null);
                     success = token != null;
+                    
+                    if (success) {
+                        // Try to get userId and username from response first
+                        userId = resp.optString("userId", null);
+                        returnedUsername = resp.optString("username", null);
+                        
+                        // If not in response, try to decode from JWT token
+                        if (userId == null || returnedUsername == null) {
+                            try {
+                                // Decode JWT token to get user info
+                                String[] parts = token.split("\\.");
+                                if (parts.length == 3) {
+                                    String payload = parts[1];
+                                    // Add padding if needed
+                                    while (payload.length() % 4 != 0) {
+                                        payload += "=";
+                                    }
+                                    // Replace URL-safe characters
+                                    payload = payload.replace('-', '+').replace('_', '/');
+                                    
+                                    // Decode base64
+                                    byte[] decodedBytes = android.util.Base64.decode(payload, android.util.Base64.DEFAULT);
+                                    String decodedPayload = new String(decodedBytes);
+                                    JSONObject tokenPayload = new JSONObject(decodedPayload);
+                                    
+                                    if (userId == null) {
+                                        userId = tokenPayload.optString("user_id", null);
+                                    }
+                                    if (returnedUsername == null) {
+                                        returnedUsername = tokenPayload.optString("username", null);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                // If JWT decoding fails, use the provided username
+                                returnedUsername = username;
+                            }
+                        }
+                    }
+                    
                     if (!success) errorMsg = "Invalid server response";
                 } else {
                     JSONObject resp = new JSONObject(response.toString());
@@ -69,8 +108,8 @@ public class UserRepository {
             final boolean finalSuccess = success;
             final String finalErrorMsg = errorMsg;
             final String finalToken = token;
-            final String finalUserId = null;
-            final String finalUsername = null;
+            final String finalUserId = userId;
+            final String finalUsername = returnedUsername;
             new Handler(Looper.getMainLooper()).post(() -> callback.onResult(finalSuccess, finalErrorMsg, finalToken, finalUserId, finalUsername));
         });
     }

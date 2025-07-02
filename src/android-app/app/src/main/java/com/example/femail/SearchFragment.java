@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.femail.Mails.MailAdapter;
 import com.example.femail.Mails.MailItem;
 import com.example.femail.Mails.MailViewModel;
+import com.example.femail.AuthPrefs;
 import java.util.ArrayList;
 
 public class SearchFragment extends Fragment {
@@ -31,7 +32,7 @@ public class SearchFragment extends Fragment {
         searchInput = view.findViewById(R.id.edit_text_search);
         recyclerView = view.findViewById(R.id.recycler_view_search_results);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mailAdapter = new MailAdapter(getContext(), new ArrayList<>());
+        mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), "search");
         recyclerView.setAdapter(mailAdapter);
         return view;
     }
@@ -47,9 +48,10 @@ public class SearchFragment extends Fragment {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String query = s.toString().trim();
                 if (!query.isEmpty()) {
-                    mailViewModel.searchMails(query).observe(getViewLifecycleOwner(), mails -> {
-                        mailAdapter.setMailList(mails != null ? mails : new ArrayList<>());
-                    });
+                    mailViewModel.searchMails(query, AuthPrefs.getUserId(requireContext()))
+                        .observe(getViewLifecycleOwner(), mails -> {
+                            mailAdapter.setMailList(mails);
+                        });
                 } else {
                     mailAdapter.setMailList(new ArrayList<>());
                 }

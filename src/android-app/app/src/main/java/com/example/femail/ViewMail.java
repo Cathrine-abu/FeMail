@@ -14,6 +14,9 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.femail.Mails.MailItem;
 import com.example.femail.Mails.MailViewModel;
+import com.example.femail.AuthPrefs;
+
+import java.util.ArrayList;
 
 public class ViewMail extends AppCompatActivity {
 
@@ -33,6 +36,9 @@ public class ViewMail extends AppCompatActivity {
         String from = getIntent().getStringExtra("mail_from");
         String to = getIntent().getStringExtra("mail_to");
         String mailId = getIntent().getStringExtra("mail_id");
+        String sourceFragment = getIntent().getStringExtra("source_fragment");
+        
+        ArrayList<String> direction = getIntent().getStringArrayListExtra("direction");
         
         // Initialize ViewModel
         mailViewModel = new ViewModelProvider(this).get(MailViewModel.class);
@@ -47,15 +53,16 @@ public class ViewMail extends AppCompatActivity {
             time,
             getIntent().getBooleanExtra("starred", false),
             true, // isRead
-            false, // isSpam
+            getIntent().getBooleanExtra("isSpam", false), // isSpam
             false, // isDraft
-            false, // isDeleted
-            java.util.List.of("inbox"), // direction
+            getIntent().getBooleanExtra("isDeleted", false), // isDeleted
+            direction != null ? direction : java.util.List.of("inbox"),
             "current_user",
             "current_user",
             null,
             "inbox",
-            false
+            false,
+            AuthPrefs.getUserId(this) // userId
         );
         TextView detailFrom = findViewById(R.id.detail_from);
         TextView detailTo = findViewById(R.id.detail_to);
@@ -123,27 +130,72 @@ public class ViewMail extends AppCompatActivity {
             PopupMenu popupMenu = new PopupMenu(ViewMail.this, v);
             popupMenu.getMenuInflater().inflate(R.menu.mail_options_menu, popupMenu.getMenu());
 
+            // Hide 'Move' option if not from inbox
+            if (sourceFragment == null || !sourceFragment.equals("inbox")) {
+                popupMenu.getMenu().findItem(R.id.action_move).setVisible(false);
+            }
+
+            // If mail is spam, show 'Unspam' instead of 'Spam'
+            if (currentMail.isSpam) {
+                popupMenu.getMenu().findItem(R.id.action_spam).setTitle("Unspam");
+            }
+
+            // If mail is deleted (in trash), show 'Delete Forever' instead of 'Move'
+            if (currentMail.isDeleted) {
+                popupMenu.getMenu().findItem(R.id.action_move).setTitle("Delete Forever");
+            }
+
             popupMenu.setOnMenuItemClickListener(item -> {
                 int id = item.getItemId();
                 if (id == R.id.action_move) {
-                    // Move to trash
-                    currentMail.isDeleted = true;
-                    currentMail.direction = java.util.List.of("trash");
-                    mailViewModel.update(currentMail);
-                    Toast.makeText(this, "Moved to trash", Toast.LENGTH_SHORT).show();
-                    finish(); // Close the activity
+                    if (currentMail.isDeleted) {
+                        // Delete forever
+                        mailViewModel.delete(currentMail);
+                        Toast.makeText(this, "Mail deleted forever", Toast.LENGTH_SHORT).show();
+                        finish();
+                    } else {
+                        // Move to trash
+                        currentMail.isDeleted = true;
+                        currentMail.direction = java.util.List.of("trash");
+                        mailViewModel.update(currentMail);
+                        Toast.makeText(this, "Moved to trash", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
                     return true;
                 } else if (id == R.id.action_spam) {
-                    // Mark as spam
-                    currentMail.isSpam = true;
-                    currentMail.direction = java.util.List.of("spam");
-                    mailViewModel.update(currentMail);
-                    Toast.makeText(this, "Marked as spam", Toast.LENGTH_SHORT).show();
-                    finish(); // Close the activity
+                    if (currentMail.isSpam) {
+                        // Unspam
+                        currentMail.isSpam = false;
+                        if (currentMail.previousDirection != null && !currentMail.previousDirection.isEmpty()) {
+                            currentMail.direction = currentMail.previousDirection;
+                        } else {
+                            currentMail.direction = java.util.List.of("inbox");
+                        }
+                        mailViewModel.update(currentMail);
+                        Toast.makeText(this, "Mail moved out of spam", Toast.LENGTH_SHORT).show();
+                        finish();
+                    } else {
+                        // Mark as spam
+                        currentMail.isSpam = true;
+                        currentMail.previousDirection = currentMail.direction;
+                        currentMail.direction = java.util.List.of("spam");
+                        mailViewModel.update(currentMail);
+                        Toast.makeText(this, "Marked as spam", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
                     return true;
                 } else if (id == R.id.action_label) {
-                    // Add label (for now, just show a message)
-                    Toast.makeText(this, "Label functionality coming soon", Toast.LENGTH_SHORT).show();
+                    // Show label selection dialog
+                    com.example.femail.labels.LabelViewModel labelViewModel = new androidx.lifecycle.ViewModelProvider(this).get(com.example.femail.labels.LabelViewModel.class);
+                    labelViewModel.getAllLabels().observe(this, labels -> {
+                        com.example.femail.labels.LabelSelectionDialog dialog =
+                            new com.example.femail.labels.LabelSelectionDialog(labels, null); // Pass current mail's labels if you have them
+                        dialog.setOnLabelsSelectedListener(selectedLabels -> {
+                            // TODO: Save selected labels to the mail (update MailItem and database)
+                            Toast.makeText(this, "Selected: " + selectedLabels.size() + " labels", Toast.LENGTH_SHORT).show();
+                        });
+                        dialog.show(getSupportFragmentManager(), "LabelSelectionDialog");
+                    });
                     return true;
                 }
                 return false;

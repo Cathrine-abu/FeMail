@@ -5,7 +5,6 @@ import android.util.Log;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
@@ -14,6 +13,7 @@ import com.example.femail.Mails.MailAdapter;
 import com.example.femail.Mails.MailDao;
 import com.example.femail.Mails.MailDatabase;
 import com.example.femail.Mails.MailItem;
+import com.example.femail.AuthPrefs;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -26,7 +26,6 @@ public class MailList extends AppCompatActivity {
     private RecyclerView listView;
     private List<MailItem> mailItems;
     private MailAdapter adapter;
-    private Toolbar actionBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,42 +40,9 @@ public class MailList extends AppCompatActivity {
 
         loadMails(category);
 
-        adapter = new MailAdapter(this, mailItems);
-        adapter.setSelectionListener((enabled, count) -> {
-            android.util.Log.d("DEBUG_BAR", "SelectionListener callback: enabled=" + enabled + ", count=" + count);
-            android.widget.Toast.makeText(this, "Selection mode: " + enabled + ", count: " + count, android.widget.Toast.LENGTH_SHORT).show();
-            if (enabled) {
-                actionBar.setVisibility(View.VISIBLE);
-                actionBar.setTitle(count + " selected");
-            } else {
-                actionBar.setVisibility(View.GONE);
-            }
-        });
-        android.util.Log.d("DEBUG_BAR", "SelectionListener set: " + (adapter != null));
+        adapter = new MailAdapter(this, mailItems, "list");
         listView.setAdapter(adapter);
 
-        actionBar = findViewById(R.id.action_bar);
-        actionBar.setVisibility(View.GONE);
-        actionBar.inflateMenu(R.menu.mail_action_menu);
-        actionBar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.action_back) {
-                adapter.clearSelection();
-                return true;
-            } else if (item.getItemId() == R.id.action_select_all) {
-                adapter.selectAll();
-                return true;
-            } else if (item.getItemId() == R.id.action_trash) {
-                for (MailItem mail : adapter.getSelectedMails()) {
-                    // TODO: Delete via ViewModel or DAO
-                }
-                adapter.clearSelection();
-                return true;
-            } else if (item.getItemId() == R.id.action_more) {
-                android.widget.Toast.makeText(this, "More options coming soon", android.widget.Toast.LENGTH_SHORT).show();
-                return true;
-            }
-            return false;
-        });
         Log.d("DEBUG_LIST", "Loaded mails: " + mailItems.size());
     }
 
@@ -87,25 +53,25 @@ public class MailList extends AppCompatActivity {
                 .build();
 
         MailDao mailDao = db.mailDao();
-        if (mailDao.getInboxMails().isEmpty()) {
-            mailDao.insertMail(new MailItem("wow", "4444", new Date(), "inbox"));
-            mailDao.insertMail(new MailItem("wow", "hhhh", new Date(), "inbox"));
-            mailDao.insertMail(new MailItem("wow", "88888", new Date(), "inbox"));
-            mailDao.insertMail(new MailItem("wow", "hh444478hh", new Date(), "inbox"));
-
-        }
+//        if (mailDao.getInboxMails().isEmpty()) {
+//            mailDao.insertMail(new MailItem("wow", "4444", new Date(), "inbox", "testUserId"));
+//            mailDao.insertMail(new MailItem("wow", "hhhh", new Date(), "inbox", "testUserId"));
+//            mailDao.insertMail(new MailItem("wow", "88888", new Date(), "inbox", "testUserId"));
+//            mailDao.insertMail(new MailItem("wow", "hh444478hh", new Date(), "inbox", "testUserId"));
+//
+//        }
         switch (category) {
             case "inbox":
-                mailItems = mailDao.getInboxMails();
+                mailItems = mailDao.getInboxMails(AuthPrefs.getUserId(this));
                 break;
             case "spam":
-                mailItems = mailDao.getSpamMails();
+                mailItems = mailDao.getSpamMails(AuthPrefs.getUserId(this));
                 break;
             case "sent":
-                mailItems = mailDao.getSentMails();
+                mailItems = mailDao.getSentMails(AuthPrefs.getUserId(this));
                 break;
             default:
-                mailItems = mailDao.getInboxMails();
+                mailItems = mailDao.getInboxMails(AuthPrefs.getUserId(this));
         }
     }
 

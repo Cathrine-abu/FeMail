@@ -22,61 +22,65 @@ import java.util.concurrent.Executors;
 public class MailRepository {
 
     private final MailDao mailDao;
-    private final LiveData<List<MailItem>> allMails;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Gson gson = new Gson();
 
     public MailRepository(Application application) {
         MailDatabase db = MailDatabase.getDatabase(application);
         mailDao = db.mailDao();
-        allMails = mailDao.getAllMails();
     }
 
     // --- ROOM ---
-    public LiveData<List<MailItem>> getAllMails() {
-        return allMails;
+    public LiveData<List<MailItem>> getAllMails(String userId) {
+        return mailDao.getAllMails(userId);
     }
 
-    // New specific mail type methods
-    public LiveData<List<MailItem>> getInboxMails() {
-        return mailDao.getInboxMailsLive();
+    public LiveData<List<MailItem>> getInboxMails(String userId) {
+        return mailDao.getInboxMailsLive(userId);
     }
 
-    public LiveData<List<MailItem>> getSentMails() {
-        return mailDao.getSentMailsLive();
+    public LiveData<List<MailItem>> getSentMails(String userId) {
+        return mailDao.getSentMailsLive(userId);
     }
 
-    public LiveData<List<MailItem>> getDraftMails() {
-        return mailDao.getDraftMailsLive();
+    public LiveData<List<MailItem>> getDraftMails(String userId) {
+        return mailDao.getDraftMailsLive(userId);
     }
 
-    public LiveData<List<MailItem>> getSpamMails() {
-        return mailDao.getSpamMailsLive();
+    public LiveData<List<MailItem>> getSpamMails(String userId) {
+        return mailDao.getSpamMailsLive(userId);
     }
 
-    public LiveData<List<MailItem>> getStarredMails() {
-        return mailDao.getStarredMailsLive();
+    public LiveData<List<MailItem>> getStarredMails(String userId) {
+        return mailDao.getStarredMailsLive(userId);
     }
 
-    public LiveData<List<MailItem>> getTrashMails() {
-        return mailDao.getTrashMailsLive();
+    public LiveData<List<MailItem>> getTrashMails(String userId) {
+        return mailDao.getTrashMailsLive(userId);
     }
 
-    // New category methods
-    public LiveData<List<MailItem>> getPrimaryMails() {
-        return mailDao.getPrimaryMailsLive();
+    public LiveData<List<MailItem>> getPrimaryMails(String userId) {
+        return mailDao.getPrimaryMailsLive(userId);
     }
 
-    public LiveData<List<MailItem>> getSocialMails() {
-        return mailDao.getSocialMailsLive();
+    public LiveData<List<MailItem>> getSocialMails(String userId) {
+        return mailDao.getSocialMailsLive(userId);
     }
 
-    public LiveData<List<MailItem>> getPromotionsMails() {
-        return mailDao.getPromotionsMailsLive();
+    public LiveData<List<MailItem>> getPromotionsMails(String userId) {
+        return mailDao.getPromotionsMailsLive(userId);
     }
 
-    public LiveData<List<MailItem>> getUpdatesMails() {
-        return mailDao.getUpdatesMailsLive();
+    public LiveData<List<MailItem>> getUpdatesMails(String userId) {
+        return mailDao.getUpdatesMailsLive(userId);
+    }
+
+    public LiveData<List<MailItem>> getMailsByLabel(String labelName, String userId) {
+        return mailDao.getMailsByLabel(labelName, userId);
+    }
+
+    public LiveData<List<MailItem>> searchMails(String query, String userId) {
+        return mailDao.searchMails(query, userId);
     }
 
     public void insert(MailItem mail) {
@@ -266,13 +270,5 @@ public class MailRepository {
             byte[] input = json.getBytes("utf-8");
             os.write(input, 0, input.length);
         }
-    }
-
-    public LiveData<List<MailItem>> getMailsByLabel(String labelName) {
-        return mailDao.getMailsByLabel(labelName);
-    }
-
-    public LiveData<List<MailItem>> searchMails(String query) {
-        return mailDao.searchMails(query);
     }
 } 
