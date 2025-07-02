@@ -13,7 +13,7 @@ import java.util.List;
 public interface LabelDao {
 
     @Query("SELECT * FROM labels WHERE :userId = :userId")
-    LiveData<List<LabelItem>> getAllLabels(int userId);
+    LiveData<List<LabelItem>> getAllLabels(String userId);
     @Query("SELECT * FROM labels WHERE id = :id")
     LabelItem getLabel(int id);
     @Insert

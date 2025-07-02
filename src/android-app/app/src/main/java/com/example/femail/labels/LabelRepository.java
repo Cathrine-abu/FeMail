@@ -17,8 +17,8 @@ public class LabelRepository {
         labelDao = db.labelDao();
     }
 
-    public LiveData<List<LabelItem>> getAllLabels(int useId) {
-        return labelDao.getAllLabels(useId);
+    public LiveData<List<LabelItem>> getAllLabels(String userId) {
+        return labelDao.getAllLabels(userId);
     }
 
     public void insert(LabelItem label) {

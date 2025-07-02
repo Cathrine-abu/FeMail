@@ -17,7 +17,7 @@ public class LabelViewModel extends AndroidViewModel {
         repository = new LabelRepository(application);
     }
 
-    public LiveData<List<LabelItem>> getAllLabels(int UserId) {
+    public LiveData<List<LabelItem>> getAllLabels(String UserId) {
         return repository.getAllLabels(UserId);
     }
 

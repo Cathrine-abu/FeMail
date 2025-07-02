@@ -9,9 +9,9 @@ public class LabelItem {
     @PrimaryKey(autoGenerate = true)
     public int id;
     @NonNull
-    public int userId;
+    public String userId;
     public String name;
-    public LabelItem(int userId, String name) {
+    public LabelItem(String userId, String name) {
         this.userId = userId;
         this.name = name;
     }
