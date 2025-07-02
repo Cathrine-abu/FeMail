@@ -12,8 +12,8 @@ import java.util.List;
 @Dao
 public interface LabelDao {
 
-    @Query("SELECT * FROM labels")
-    LiveData<List<LabelItem>> getAllLabels();
+    @Query("SELECT * FROM labels WHERE :userId = :userId")
+    LiveData<List<LabelItem>> getAllLabels(String userId);
     @Query("SELECT * FROM labels WHERE id = :id")
     LabelItem getLabel(int id);
     @Insert

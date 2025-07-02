@@ -43,7 +43,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class MailActivity extends AppCompatActivity {
-    private int UserId = 1;
+    private String UserId = "1";
     private List<LabelItem> cachedLabels = Collections.emptyList();
     private SwitchMaterial darkModeSwitch;
     private EditText searchInput;

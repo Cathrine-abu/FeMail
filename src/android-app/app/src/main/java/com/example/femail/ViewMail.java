@@ -187,7 +187,7 @@ public class ViewMail extends AppCompatActivity {
                 } else if (id == R.id.action_label) {
                     // Show label selection dialog
                     com.example.femail.labels.LabelViewModel labelViewModel = new androidx.lifecycle.ViewModelProvider(this).get(com.example.femail.labels.LabelViewModel.class);
-                    labelViewModel.getAllLabels().observe(this, labels -> {
+                    labelViewModel.getAllLabels(AuthPrefs.getUserId(this)).observe(this, labels -> {
                         com.example.femail.labels.LabelSelectionDialog dialog =
                             new com.example.femail.labels.LabelSelectionDialog(labels, null); // Pass current mail's labels if you have them
                         dialog.setOnLabelsSelectedListener(selectedLabels -> {
