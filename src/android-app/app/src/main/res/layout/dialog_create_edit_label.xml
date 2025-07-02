@@ -22,7 +22,6 @@
             android:id="@+id/labelTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@android:color/black"
             android:textSize="20sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
@@ -35,7 +34,6 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/new_label_request"
-            android:textColor="@android:color/darker_gray"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -84,7 +82,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/cancel"
-                android:textColor="@color/black"
+                android:textColor="@color/accent"
                 app:cornerRadius="32dp" />
 
             <com.google.android.material.button.MaterialButton
@@ -94,8 +92,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:backgroundTint="@color/accent"
-                android:text="@string/create"
                 android:textColor="@android:color/white"
+                android:text="@string/create"
                 app:cornerRadius="32dp" />
         </LinearLayout>
     </LinearLayout>

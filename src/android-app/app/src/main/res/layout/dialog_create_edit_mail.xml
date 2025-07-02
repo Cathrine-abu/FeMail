@@ -72,20 +72,26 @@
             android:layout_marginTop="16dp"
             android:orientation="horizontal">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDraft"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:textColor="@color/accent"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                app:cornerRadius="32dp"
                 android:text="@string/save_as_draft" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSend"
-                style="?android:attr/buttonBarButtonStyle"
+                style="@style/Widget.MaterialComponents.Button"
+                android:backgroundTint="@color/accent"
+                android:textColor="@android:color/white"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
+                app:cornerRadius="32dp"
                 android:text="@string/send" />
         </LinearLayout>
     </LinearLayout>

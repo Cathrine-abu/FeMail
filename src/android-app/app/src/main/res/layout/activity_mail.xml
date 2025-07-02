@@ -27,31 +27,55 @@
             app:layout_constraintTop_toBottomOf="@id/topBar"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:background="@android:color/white"/>
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Floating Night Mode Button -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/darkModeSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginBottom="24dp"
+            android:thumbTint="@color/white"
+            android:trackTint="@color/black"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"/>
 
         <!-- Floating Compose Button -->
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/composeBtn"
+            style="@style/Widget.MaterialComponents.ExtendedFloatingActionButton"
+            app:cornerRadius="32dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="24dp"
             android:backgroundTint="@color/accent"
-            android:icon="@android:drawable/ic_menu_edit"
             android:text="@string/compose"
             android:textColor="@color/white"
-            app:iconTint="@color/white"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/navigation_view"
-        android:layout_width="280dp"
+    <LinearLayout
+        android:id="@+id/navigation_container"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
+        android:orientation="vertical"
         android:layout_gravity="start"
-        app:menu="@menu/sidebar_menu"
-        app:headerLayout="@layout/sidebar_header" />
+        android:background="?attr/colorSurface">
+
+        <include layout="@layout/sidebar_header" />
+
+        <com.google.android.material.navigation.NavigationView
+            android:id="@+id/navigation_view"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            app:menu="@menu/sidebar_menu"
+            android:overScrollMode="never"
+            android:scrollbars="none"
+            android:fitsSystemWindows="false"/>
+    </LinearLayout>
 
 </androidx.drawerlayout.widget.DrawerLayout>
