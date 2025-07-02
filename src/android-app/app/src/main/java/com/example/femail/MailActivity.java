@@ -39,6 +39,7 @@ import com.example.femail.labels.LabelItem;
 import com.example.femail.labels.LabelViewModel;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
+import com.example.femail.AuthPrefs;
 
 public class MailActivity extends AppCompatActivity {
     private EditText searchInput;
@@ -187,6 +188,15 @@ public class MailActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             navigateToFragment(new InboxFragment());
         }
+
+        // Debug: Show logged-in user and token
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
+        String username = AuthPrefs.getUsername(this);
+        Log.d("AUTH_DEBUG", "Token: " + token);
+        Log.d("AUTH_DEBUG", "UserId: " + userId);
+        Log.d("AUTH_DEBUG", "Username: " + username);
+        Toast.makeText(this, "Logged in as: " + username, Toast.LENGTH_LONG).show();
     }
 
     @SuppressLint("SetTextI18n")
@@ -230,7 +240,7 @@ public class MailActivity extends AppCompatActivity {
         builder.setCancelable(true);
         builder.show();
     }
-    private void showCreateOrEditMailPopup(@Nullable MailItem existingMail) {
+    public void showCreateOrEditMailPopup(@Nullable MailItem existingMail) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_create_edit_mail, null);
         builder.setView(view);
@@ -270,14 +280,10 @@ public class MailActivity extends AppCompatActivity {
             String mailTo = inputTo.getText().toString().trim();
             String mailSubject = inputSubject.getText().toString().trim();
             String mailBody = inputBody.getText().toString().trim();
-            if (mailTo.isEmpty() || mailSubject.isEmpty() || mailBody.isEmpty()) {
-                mailError.setText(R.string.mandatory_fields);
-                return;
-            }
 
             if (existingMail != null) {
                 // Update existing mail as draft
-                String currentTime = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date());
+                String currentTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
                 existingMail.to = mailTo.isEmpty() ? null : java.util.List.of(mailTo);
                 existingMail.subject = mailSubject;
                 existingMail.body = mailBody;
@@ -288,7 +294,7 @@ public class MailActivity extends AppCompatActivity {
                 mailViewModel.update(existingMail);
             } else {
                 // Create new draft mail
-                String currentTime = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date());
+                String currentTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
                 MailItem newMail = new MailItem(
                     String.valueOf(System.currentTimeMillis()),
                     mailSubject,
@@ -298,7 +304,8 @@ public class MailActivity extends AppCompatActivity {
                     currentTime,
                     false, false, false, true, false, // isStarred, isRead, isSpam, isDraft, isDeleted
                     java.util.List.of("draft"),
-                    "current_user", "current_user", null, category, false
+                    "current_user", "current_user", null, category, false,
+                    AuthPrefs.getUserId(this) // userId
                 );
                 mailViewModel.insert(newMail);
             }
@@ -319,18 +326,36 @@ public class MailActivity extends AppCompatActivity {
 
             if (existingMail != null) {
                 // Update existing mail as sent
-                String currentTime = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date());
+                String currentTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
                 existingMail.to = java.util.List.of(mailTo);
                 existingMail.subject = mailSubject;
                 existingMail.body = mailBody;
                 existingMail.time = currentTime;
                 existingMail.isDraft = false;
-                existingMail.direction = java.util.List.of("sent");
+                // If sending to yourself, set direction to both sent and inbox
+                String currentUserEmail = AuthPrefs.getUsername(this);
+                if (mailTo.equals(currentUserEmail)) {
+                    existingMail.direction = java.util.List.of("sent", "inbox");
+                } else {
+                    existingMail.direction = java.util.List.of("sent");
+                }
                 existingMail.category = category;
                 mailViewModel.update(existingMail);
+                // Send to server
+                String token = AuthPrefs.getToken(this);
+                String userId = AuthPrefs.getUserId(this);
+                mailViewModel.sendMailToServer(this, token, userId, existingMail);
             } else {
                 // Create new sent mail
-                String currentTime = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date());
+                String currentTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
+                // If sending to yourself, set direction to both sent and inbox
+                String currentUserEmail = AuthPrefs.getUsername(this);
+                java.util.List<String> direction;
+                if (mailTo.equals(currentUserEmail)) {
+                    direction = java.util.List.of("sent", "inbox");
+                } else {
+                    direction = java.util.List.of("sent");
+                }
                 MailItem newMail = new MailItem(
                     String.valueOf(System.currentTimeMillis()),
                     mailSubject,
@@ -339,10 +364,15 @@ public class MailActivity extends AppCompatActivity {
                     java.util.List.of(mailTo),
                     currentTime,
                     false, true, false, false, false, // isStarred, isRead, isSpam, isDraft, isDeleted
-                    java.util.List.of("sent"),
-                    "current_user", "current_user", null, category, false
+                    direction,
+                    "current_user", "current_user", null, category, false,
+                    AuthPrefs.getUserId(this) // userId
                 );
                 mailViewModel.insert(newMail);
+                // Send to server
+                String token = AuthPrefs.getToken(this);
+                String userId = AuthPrefs.getUserId(this);
+                mailViewModel.sendMailToServer(this, token, userId, newMail);
             }
             Toast.makeText(this, "Mail sent", Toast.LENGTH_SHORT).show();
             dialog.dismiss();

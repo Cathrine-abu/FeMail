@@ -15,6 +15,7 @@ import com.example.femail.Mails.MailAdapter;
 import com.example.femail.Mails.MailItem;
 import com.example.femail.Mails.MailViewModel;
 import com.example.femail.R;
+import com.example.femail.AuthPrefs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,7 @@ public class TrashFragment extends Fragment {
 
         recyclerView = view.findViewById(R.id.mailListView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), null, (mail, position) -> {
+        mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), "trash", null, (mail, position) -> {
             // Update the mail in the database when star is clicked
             mailViewModel.update(mail);
         });
@@ -45,9 +46,10 @@ public class TrashFragment extends Fragment {
 
         mailViewModel = new ViewModelProvider(requireActivity()).get(MailViewModel.class);
 
-        mailViewModel.getTrashMails().observe(getViewLifecycleOwner(), mails -> {
-            mailAdapter.setMailList(mails);
-        });
+        mailViewModel.getTrashMails(AuthPrefs.getUserId(requireContext()))
+            .observe(getViewLifecycleOwner(), mails -> {
+                mailAdapter.setMailList(mails);
+            });
 
         return view;
     }

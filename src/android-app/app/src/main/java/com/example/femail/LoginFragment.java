@@ -26,6 +26,7 @@ import java.net.URL;
 import java.util.concurrent.Executors;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
+import android.content.Intent;
 
 public class LoginFragment extends Fragment {
 
@@ -68,10 +69,23 @@ public class LoginFragment extends Fragment {
             loginButton.setEnabled(true);
             loginButton.setText("Login");
             if (result.success) {
-                AuthPrefs.saveAuthData(requireContext(), result.token, null, null);
+                // Debug logging
+                android.util.Log.d("LoginFragment", "Login successful - Token: " + (result.token != null ? "present" : "null") + 
+                    ", UserId: " + result.userId + ", Username: " + result.username);
+                
+                AuthPrefs.saveAuthData(requireContext(), result.token, result.userId, result.username);
+                
+                // Verify saved data
+                String savedToken = AuthPrefs.getToken(requireContext());
+                String savedUserId = AuthPrefs.getUserId(requireContext());
+                String savedUsername = AuthPrefs.getUsername(requireContext());
+                android.util.Log.d("LoginFragment", "Saved data - Token: " + (savedToken != null ? "present" : "null") + 
+                    ", UserId: " + savedUserId + ", Username: " + savedUsername);
+                
                 Toast.makeText(getActivity(), "Login successful!", Toast.LENGTH_SHORT).show();
-                NavHostFragment.findNavController(LoginFragment.this)
-                        .navigate(R.id.action_LoginFragment_to_FirstFragment);
+                Intent intent = new Intent(getActivity(), MailActivity.class);
+                startActivity(intent);
+                requireActivity().finish();
             } else {
                 Toast.makeText(getActivity(), result.message, Toast.LENGTH_SHORT).show();
             }

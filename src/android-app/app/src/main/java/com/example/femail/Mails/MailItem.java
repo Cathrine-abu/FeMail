@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
+import androidx.room.TypeConverters;
+import com.example.femail.Converters;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -19,6 +21,7 @@ public class MailItem {
     public String subject;
     public String body;
     public String from;
+    @TypeConverters(Converters.class)
     public List<String> to;
     public String owner;
     public String user;
@@ -30,15 +33,21 @@ public class MailItem {
     public boolean isSpam;
     public boolean isDraft;
     public boolean isDeleted;
+    @TypeConverters(Converters.class)
     public List<String> direction;
 
+    @Ignore
+    public List<String> previousDirection;
+
     public boolean isSelected = false;
+
+    public String userId;
 
     public MailItem(@NonNull String id, String subject, String body, String from, List<String> to,
                     String time, boolean isStarred, boolean isRead,
                     boolean isSpam, boolean isDraft, boolean isDeleted,
                     List<String> direction, String user, String owner,
-                    String groupId, String category, boolean isSelected) {
+                    String groupId, String category, boolean isSelected, String userId) {
         this.id = id;
         this.subject = subject;
         this.body = body;
@@ -56,10 +65,11 @@ public class MailItem {
         this.groupId = groupId;
         this.category = category;
         this.isSelected = isSelected;
+        this.userId = userId;
     }
 
     @Ignore
-    public MailItem(String from, String subject, Date date, String category) {
+    public MailItem(String from, String subject, Date date, String category, String userId) {
         this.id = String.valueOf(System.currentTimeMillis());
         this.from = from;
         this.subject = subject;
@@ -77,6 +87,7 @@ public class MailItem {
         this.groupId = null;
         this.category = category;
         this.isSelected = false;
+        this.userId = userId;
     }
 
     public String getSubject() { return subject; }

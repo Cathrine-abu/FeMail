@@ -1,5 +1,6 @@
 package com.example.femail.MailFragments;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,7 +16,9 @@ import com.example.femail.EditDraftDialog;
 import com.example.femail.Mails.MailAdapter;
 import com.example.femail.Mails.MailItem;
 import com.example.femail.Mails.MailViewModel;
+import com.example.femail.MailActivity;
 import com.example.femail.R;
+import com.example.femail.AuthPrefs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +41,7 @@ public class DraftsFragment extends Fragment implements MailAdapter.OnMailClickL
         recyclerView = view.findViewById(R.id.mailListView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), this, (mail, position) -> {
+        mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), "drafts", this, (mail, position) -> {
             // Update the mail in the database when star is clicked
             mailViewModel.update(mail);
         });
@@ -46,9 +49,10 @@ public class DraftsFragment extends Fragment implements MailAdapter.OnMailClickL
 
         mailViewModel = new ViewModelProvider(requireActivity()).get(MailViewModel.class);
 
-        mailViewModel.getDraftMails().observe(getViewLifecycleOwner(), mails -> {
-            mailAdapter.setMailList(mails);
-        });
+        mailViewModel.getDraftMails(AuthPrefs.getUserId(requireContext()))
+            .observe(getViewLifecycleOwner(), mails -> {
+                mailAdapter.setMailList(mails);
+            });
 
         return view;
     }
@@ -56,8 +60,10 @@ public class DraftsFragment extends Fragment implements MailAdapter.OnMailClickL
     @Override
     public void onMailClick(MailItem mail) {
         if (mail.isDraft) {
-            EditDraftDialog dialog = EditDraftDialog.newInstance(mail);
-            dialog.show(getParentFragmentManager(), "EditDraftDialog");
+            Activity activity = getActivity();
+            if (activity instanceof MailActivity) {
+                ((MailActivity) activity).showCreateOrEditMailPopup(mail);
+            }
         }
     }
 } 
