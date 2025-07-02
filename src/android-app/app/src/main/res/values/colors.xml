@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
     <color name="purple_500">#6200EE</color>
     <color name="mail_background">#FFFFFFFF</color>
     <color name="login_bg">#F5F6FA</color>
     <color name="card_bg">#FFFFFF</color>
     <color name="accent">#7C3AED</color>
     <color name="input_bg">#F0F1F6</color>
+    <color name="blue_200">#90CAF9</color>
+    <color name="blue_400">#42A5F5</color>
+    <color name="blue_500">#2196F3</color>
+    <color name="blue_700">#1976D2</color>
+    <color name="teal_200">#80CBC4</color>
+    <color name="teal_700">#00796B</color>
+    <color name="dark_surface">#121212</color>
+    <color name="light_grey">#98989B</color>
+    <color name="light_accent">#9C6AFA</color>
 
 </resources>
