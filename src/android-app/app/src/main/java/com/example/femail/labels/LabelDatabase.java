@@ -9,7 +9,7 @@ import androidx.room.TypeConverters;
 
 import com.example.femail.Converters;
 
-@Database(entities = {LabelItem.class}, version = 3)
+@Database(entities = {LabelItem.class}, version = 6)
 @TypeConverters({Converters.class})
 
 public abstract class LabelDatabase extends RoomDatabase {
