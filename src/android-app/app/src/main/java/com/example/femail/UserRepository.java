@@ -1,21 +1,37 @@
 package com.example.femail;
 
+import android.app.Application;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
+
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
+import com.example.femail.labels.LabelDao;
+import com.example.femail.labels.LabelDatabase;
+import com.example.femail.labels.LabelItem;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import org.json.JSONObject;
 import java.io.*;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class UserRepository {
+    private UserDao userDao;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Gson gson = new Gson();
 
-    public UserRepository() {
-        // No initialization needed for network-only repository
+    public UserRepository(Application application) {
+        UserDatabase db = UserDatabase.getDatabase(application);
+        userDao = db.userDao();
     }
-
     public interface AuthCallback {
         void onResult(boolean success, String message, String token, String userId, String username);
     }
@@ -176,4 +192,34 @@ public class UserRepository {
             new Handler(Looper.getMainLooper()).post(() -> callback.onResult(finalSuccess, finalErrorMsg, finalToken, finalUserId, finalUsername));
         });
     }
-} 
+
+    public LiveData<User> getUserFromServer(String token, String userId) {
+        MutableLiveData<User> userLiveData = new MutableLiveData<>();
+
+        executor.execute(() -> {
+            try {
+                URL url = new URL("http://10.0.2.2:8080/api/users/" + userId);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("Authorization", "Bearer " + token);
+                conn.setRequestProperty("user-id", userId);
+                conn.setRequestMethod("GET");
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder result = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    result.append(line);
+                }
+                reader.close();
+
+                User user = gson.fromJson(result.toString(), User.class);
+                userLiveData.postValue(user);
+
+            } catch (Exception e) {
+                Log.e("UserRepository", "getUserFromServer error", e);
+            }
+        });
+        return userLiveData;
+    }
+}

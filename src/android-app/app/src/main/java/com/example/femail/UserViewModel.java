@@ -3,6 +3,7 @@ package com.example.femail;
 import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 public class UserViewModel extends AndroidViewModel {
@@ -12,7 +13,7 @@ public class UserViewModel extends AndroidViewModel {
 
     public UserViewModel(@NonNull Application application) {
         super(application);
-        repository = new UserRepository();
+        repository = new UserRepository(application);
     }
 
     public void login(String username, String password) {
@@ -25,6 +26,10 @@ public class UserViewModel extends AndroidViewModel {
         repository.register(username, password, fullName, phone, birthDate, gender, base64Image, (success, message, token, userId, returnedUsername) -> {
             registerResult.setValue(new AuthResult(success, message, token, userId, returnedUsername));
         });
+    }
+
+    public LiveData<User> getUserFromServer(String token, String userId) {
+        return repository.getUserFromServer(token, userId);
     }
 
     public static class AuthResult {

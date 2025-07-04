@@ -1,30 +1,26 @@
-package com.example.femail.Mails;
+package com.example.femail;
 
 import android.content.Context;
+
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
-import com.example.femail.Converters;
-import com.example.femail.User;
-import com.example.femail.UserDao;
-
-@Database(entities = {MailItem.class, User.class}, version = 5)
+@Database(entities = {User.class}, version = 3)
 @TypeConverters({Converters.class})
 
-public abstract class MailDatabase extends RoomDatabase {
-    public abstract MailDao mailDao();
+public abstract class UserDatabase extends RoomDatabase {
     public abstract UserDao userDao();
 
-    private static volatile MailDatabase INSTANCE;
+    private static volatile UserDatabase INSTANCE;
 
-    public static MailDatabase getDatabase(final Context context) {
+    public static UserDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
-            synchronized (MailDatabase.class) {
+            synchronized (UserDatabase.class) {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                                    MailDatabase.class, "mail_database")
+                                    UserDatabase.class, "user_database")
                             .fallbackToDestructiveMigration()
                             .build();
                 }
@@ -32,4 +28,4 @@ public abstract class MailDatabase extends RoomDatabase {
         }
         return INSTANCE;
     }
-} 
+}
