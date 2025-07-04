@@ -160,7 +160,7 @@ const InboxMail = () => {
               <span className="mail-label">Draft</span>
             )}
 
-            {!mail.isDraft && (
+            {(mail.direction.includes("received") || !mail.isDraft) && (
               <span className="mail-from">{mail.from}</span>
             )}
 

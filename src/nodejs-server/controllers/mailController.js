@@ -66,15 +66,19 @@ exports.sendMail = async (req, res) => {
     const timestamp = new Date().toISOString();
     const groupId = `${Date.now()}_${from}_${Math.floor(Math.random() * 100000)}`;
 
-    const senderUser = getUserById(from);
+    const senderUser = await getUserById(from);
+    if (!senderUser) {
+    return res.status(404).json({ error: 'Sender user not found' });
+    }
+
 
     if (!isDraft) {
-        recipients.forEach((recipient) => {
-            const recipientUser = findUserByUsername(recipient);
-            if (!recipientUser) return;
-            if (recipientUser.id.toString() === from) return;
+        for (const recipient of recipients) {
+            const recipientUser = await findUserByUsername(recipient);
+            if (!recipientUser) continue;
+            if (recipientUser.id.toString() === from) continue;
 
-            storeMails.createMail({
+            await storeMails.createMail({
                 subject,
                 body,
                 from: senderUser.username,
@@ -90,19 +94,20 @@ exports.sendMail = async (req, res) => {
                 groupId: (senderUser.username === recipient) ? groupId : null,
                 isRead: false
             });
-        });
+        }
+
     }
 
     const isSelfMail =
-        !isDraft &&
         recipients.length === 1 &&
         recipients[0] === senderUser.username;
 
     const finalDirection = isSelfMail
-        ? ['sent', 'received']
+        ? (isDraft ? ['draft', 'received'] : ['sent', 'received'])
         : Array.isArray(direction)
             ? direction
-            : [direction || "sent"];
+            : [direction || (isDraft ? 'draft' : 'sent')];
+
 
     const sentMail = storeMails.createMail({
         subject,

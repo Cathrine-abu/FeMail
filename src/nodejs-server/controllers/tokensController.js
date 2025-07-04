@@ -20,7 +20,12 @@ exports.loginUser = async (req, res) => {
       JWT_SECRET,
       { expiresIn: JWT_EXPIRATION }
     );
-    return res.status(200).json({ token });
+    return res.status(200).json({
+      token,
+      userId: user.id,
+      username: user.username
+    });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

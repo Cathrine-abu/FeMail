@@ -96,6 +96,13 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
         holder.fromView.setText(mail.from);
         holder.bodyView.setText(mail.body);
 
+        // Hide star icon if in trash
+        if ("trash".equals(sourceFragment)) {
+            holder.starView.setVisibility(View.GONE);
+        } else {
+            holder.starView.setVisibility(View.VISIBLE);
+        }
+
         holder.checkView.setVisibility(mail.isSelected ? View.VISIBLE : View.GONE);
         holder.profileView.setVisibility(mail.isSelected ? View.GONE : View.VISIBLE);
 
