@@ -10,7 +10,7 @@ import com.example.femail.Converters;
 import com.example.femail.User;
 import com.example.femail.UserDao;
 
-@Database(entities = {MailItem.class, User.class}, version = 4)
+@Database(entities = {MailItem.class, User.class}, version = 5)
 @TypeConverters({Converters.class})
 
 public abstract class MailDatabase extends RoomDatabase {
