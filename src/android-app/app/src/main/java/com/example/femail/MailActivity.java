@@ -22,6 +22,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.femail.Mails.MoveCategoryAdapter;
 import com.example.femail.labels.LabelItem;
 import com.example.femail.labels.LabelSelectionDialog;
 import com.example.femail.labels.LabelViewModel;
@@ -53,6 +54,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MailActivity extends AppCompatActivity {
     private List<LabelItem> cachedLabels = Collections.emptyList();
@@ -330,10 +338,7 @@ public class MailActivity extends AppCompatActivity {
             String mailTo = inputTo.getText().toString().trim();
             String mailSubject = inputSubject.getText().toString().trim();
             String mailBody = inputBody.getText().toString().trim();
-            if (mailTo.isEmpty() || mailSubject.isEmpty() || mailBody.isEmpty()) {
-                mailError.setText(R.string.mandatory_fields);
-                return;
-            }
+            // Drafts can have empty fields - no validation needed
 
             if (existingMail != null) {
                 // Update existing mail as draft
@@ -575,6 +580,36 @@ public class MailActivity extends AppCompatActivity {
                 .addToBackStack(null)
                 .commit();
         drawerLayout.closeDrawers();
+    }
+
+    // Add this method to show the Move dialog
+    private void showMoveMailDialog(MailItem mail) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_move_mail, null);
+        builder.setView(view);
+
+        RecyclerView categoryList = view.findViewById(R.id.categoryList);
+        categoryList.setLayoutManager(new LinearLayoutManager(this));
+
+        // System categories
+        List<String> categories = new ArrayList<>(Arrays.asList("Primary", "Social", "Promotions", "Updates", "Unwanted"));
+        // Optionally add user labels here if available
+
+        final AlertDialog[] dialogHolder = new AlertDialog[1];
+        MoveCategoryAdapter adapter = new MoveCategoryAdapter(categories, selectedCategory -> {
+            moveMailToCategory(mail, selectedCategory);
+            dialogHolder[0].dismiss();
+        });
+        categoryList.setAdapter(adapter);
+        dialogHolder[0] = builder.create();
+        dialogHolder[0].show();
+    }
+
+    // Add this method to update the mail's category
+    private void moveMailToCategory(MailItem mail, String category) {
+        mail.category = category.toLowerCase();
+        mailViewModel.update(mail);
+        Toast.makeText(this, "Mail moved to " + category, Toast.LENGTH_SHORT).show();
     }
 
 }

@@ -11,12 +11,18 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.appcompat.app.AlertDialog;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.femail.Mails.MailItem;
 import com.example.femail.Mails.MailViewModel;
 import com.example.femail.AuthPrefs;
+import com.example.femail.Mails.MoveCategoryAdapter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ViewMail extends AppCompatActivity {
 
@@ -148,21 +154,11 @@ public class ViewMail extends AppCompatActivity {
             popupMenu.setOnMenuItemClickListener(item -> {
                 int id = item.getItemId();
                 if (id == R.id.action_move) {
-                    if (currentMail.isDeleted) {
-                        // Delete forever
-                        mailViewModel.delete(currentMail);
-                        Toast.makeText(this, "Mail deleted forever", Toast.LENGTH_SHORT).show();
-                        finish();
-                    } else {
-                        // Move to trash
-                        currentMail.isDeleted = true;
-                        currentMail.direction = java.util.List.of("trash");
-                        mailViewModel.update(currentMail);
-                        Toast.makeText(this, "Moved to trash", Toast.LENGTH_SHORT).show();
-                        finish();
-                    }
+                    showMoveMailDialog(currentMail);
                     return true;
                 } else if (id == R.id.action_spam) {
+                    String token = AuthPrefs.getToken(this);
+                    String userId = AuthPrefs.getUserId(this);
                     if (currentMail.isSpam) {
                         // Unspam
                         currentMail.isSpam = false;
@@ -172,6 +168,7 @@ public class ViewMail extends AppCompatActivity {
                             currentMail.direction = java.util.List.of("inbox");
                         }
                         mailViewModel.update(currentMail);
+                        mailViewModel.unmarkMailAsSpamOnServer(token, userId, currentMail.id);
                         Toast.makeText(this, "Mail moved out of spam", Toast.LENGTH_SHORT).show();
                         finish();
                     } else {
@@ -180,6 +177,7 @@ public class ViewMail extends AppCompatActivity {
                         currentMail.previousDirection = currentMail.direction;
                         currentMail.direction = java.util.List.of("spam");
                         mailViewModel.update(currentMail);
+                        mailViewModel.markMailAsSpamOnServer(token, userId, currentMail.id);
                         Toast.makeText(this, "Marked as spam", Toast.LENGTH_SHORT).show();
                         finish();
                     }
@@ -205,5 +203,55 @@ public class ViewMail extends AppCompatActivity {
         });
 
 
+    }
+
+    private void showMoveMailDialog(MailItem mail) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_move_mail, null);
+        builder.setView(view);
+
+        RecyclerView categoryList = view.findViewById(R.id.categoryList);
+        categoryList.setLayoutManager(new LinearLayoutManager(this));
+
+        List<String> categories = new ArrayList<>(Arrays.asList("Primary", "Social", "Promotions", "Updates"));
+        final AlertDialog[] dialogHolder = new AlertDialog[1];
+
+        // Fetch user labels and update the adapter when loaded
+        com.example.femail.labels.LabelViewModel labelViewModel = new androidx.lifecycle.ViewModelProvider(this).get(com.example.femail.labels.LabelViewModel.class);
+        labelViewModel.getAllLabels(AuthPrefs.getUserId(this)).observe(this, labels -> {
+            if (labels != null) {
+                for (com.example.femail.labels.LabelItem label : labels) {
+                    categories.add(label.getName());
+                }
+            }
+            MoveCategoryAdapter adapter = new MoveCategoryAdapter(categories, selectedCategory -> {
+                moveMailToCategory(mail, selectedCategory);
+                dialogHolder[0].dismiss();
+            });
+            categoryList.setAdapter(adapter);
+        });
+        dialogHolder[0] = builder.create();
+        dialogHolder[0].show();
+    }
+
+    private void moveMailToCategory(MailItem mail, String category) {
+        if (category.equalsIgnoreCase("Primary")) {
+            Toast.makeText(this, "Mail kept in Primary (Inbox)", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        mail.category = category.toLowerCase();
+        // Remove "inbox" from direction and add the new category
+        if (mail.direction != null) {
+            List<String> newDirection = new ArrayList<>(mail.direction);
+            newDirection.remove("inbox");
+            if (!newDirection.contains(category.toLowerCase())) {
+                newDirection.add(category.toLowerCase());
+            }
+            mail.direction = newDirection;
+        } else {
+            mail.direction = new ArrayList<>(Arrays.asList(category.toLowerCase()));
+        }
+        mailViewModel.update(mail);
+        Toast.makeText(this, "Mail moved to " + category, Toast.LENGTH_SHORT).show();
     }
 }
