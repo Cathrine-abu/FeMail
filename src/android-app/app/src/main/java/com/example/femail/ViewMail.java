@@ -96,6 +96,15 @@ public class ViewMail extends AppCompatActivity {
 
         starView.setImageResource(isStarred[0] ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
 
+        // Hide star icon if mail is in trash
+        boolean isDeleted = getIntent().getBooleanExtra("isDeleted", false);
+        boolean inTrash = isDeleted || (direction != null && direction.contains("trash"));
+        if (inTrash) {
+            starView.setVisibility(View.GONE);
+        } else {
+            starView.setVisibility(View.VISIBLE);
+        }
+
         starView.setOnClickListener(v -> {
             isStarred[0] = !isStarred[0];
             starView.setImageResource(isStarred[0] ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
@@ -136,19 +145,14 @@ public class ViewMail extends AppCompatActivity {
             PopupMenu popupMenu = new PopupMenu(ViewMail.this, v);
             popupMenu.getMenuInflater().inflate(R.menu.mail_options_menu, popupMenu.getMenu());
 
-            // Hide 'Move' option if not from inbox
-            if (sourceFragment == null || !sourceFragment.equals("inbox")) {
+            // Hide 'Move' option if not from inbox or trash
+            if (sourceFragment == null || (!sourceFragment.equals("inbox") && !sourceFragment.equals("trash"))) {
                 popupMenu.getMenu().findItem(R.id.action_move).setVisible(false);
             }
 
             // If mail is spam, show 'Unspam' instead of 'Spam'
             if (currentMail.isSpam) {
                 popupMenu.getMenu().findItem(R.id.action_spam).setTitle("Unspam");
-            }
-
-            // If mail is deleted (in trash), show 'Delete Forever' instead of 'Move'
-            if (currentMail.isDeleted) {
-                popupMenu.getMenu().findItem(R.id.action_move).setTitle("Delete Forever");
             }
 
             popupMenu.setOnMenuItemClickListener(item -> {
@@ -236,7 +240,11 @@ public class ViewMail extends AppCompatActivity {
 
     private void moveMailToCategory(MailItem mail, String category) {
         if (category.equalsIgnoreCase("Primary")) {
-            Toast.makeText(this, "Mail kept in Primary (Inbox)", Toast.LENGTH_SHORT).show();
+            mail.category = "primary";
+            mail.direction = new ArrayList<>(Arrays.asList("inbox", "primary"));
+            mail.isDeleted = false;
+            mailViewModel.update(mail);
+            Toast.makeText(this, "Mail moved to Primary (Inbox)", Toast.LENGTH_SHORT).show();
             return;
         }
         mail.category = category.toLowerCase();
@@ -251,6 +259,8 @@ public class ViewMail extends AppCompatActivity {
         } else {
             mail.direction = new ArrayList<>(Arrays.asList(category.toLowerCase()));
         }
+        // Remove from trash
+        mail.isDeleted = false;
         mailViewModel.update(mail);
         Toast.makeText(this, "Mail moved to " + category, Toast.LENGTH_SHORT).show();
     }
