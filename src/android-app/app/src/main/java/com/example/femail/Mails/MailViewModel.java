@@ -109,4 +109,12 @@ public class MailViewModel extends AndroidViewModel {
     public void sendMailToServer(Context context, String token, String userId, MailItem mail) {
         repository.sendMailToServer(token, userId, mail);
     }
+
+    public void markMailAsSpamOnServer(String token, String userId, String mailId) {
+        repository.markMailAsSpam(token, userId, mailId);
+    }
+
+    public void unmarkMailAsSpamOnServer(String token, String userId, String mailId) {
+        repository.unmarkMailAsSpam(token, userId, mailId);
+    }
 } 

@@ -189,6 +189,19 @@ exports.updateMail = async (req, res) => {
             }
         }
 
+        // Append URLs to data/urls.txt if mail is marked as spam
+        if (isSpam && urlsToCheck.length > 0) {
+            const fs = require('fs');
+            const path = require('path');
+            const urlsFile = path.join(__dirname, '../../data/urls.txt');
+            const urlsToAppend = urlsToCheck.join('\n') + '\n';
+            fs.appendFile(urlsFile, urlsToAppend, (err) => {
+                if (err) {
+                    console.error('Failed to append URLs to urls.txt:', err);
+                }
+            });
+        }
+
         updatedFields.isSpam = isSpam;
         const wasDraft = mail.isDraft;
         const nowSent = updatedFields.isDraft === false;
