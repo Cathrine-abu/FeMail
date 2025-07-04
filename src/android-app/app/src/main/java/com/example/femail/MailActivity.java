@@ -43,7 +43,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class MailActivity extends AppCompatActivity {
-    private String UserId = "1";
     private List<LabelItem> cachedLabels = Collections.emptyList();
     private SwitchMaterial darkModeSwitch;
     private EditText searchInput;
@@ -120,11 +119,13 @@ public class MailActivity extends AppCompatActivity {
             }
         });
 
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
 
         // MVVM: Observe labels and inject into menu
         labelViewModel = new ViewModelProvider(this).get(LabelViewModel.class);
         mailViewModel = new ViewModelProvider(this).get(MailViewModel.class);
-        labelViewModel.getAllLabels(UserId).observe(this, labels -> {
+        labelViewModel.getAllLabels(userId).observe(this, labels -> {
             cachedLabels = (labels != null) ? labels : Collections.emptyList();
             Menu menu = navigationView.getMenu();
             menu.removeGroup(LABEL_GROUP_ID);
@@ -152,6 +153,7 @@ public class MailActivity extends AppCompatActivity {
                 }
             }
         });
+        labelViewModel.refreshLabels(token, userId);
 
         // Handle label clicks
         navigationView.setNavigationItemSelectedListener(item -> {
@@ -203,15 +205,6 @@ public class MailActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             navigateToFragment(new InboxFragment());
         }
-
-        // Debug: Show logged-in user and token
-        String token = AuthPrefs.getToken(this);
-        String userId = AuthPrefs.getUserId(this);
-        String username = AuthPrefs.getUsername(this);
-        Log.d("AUTH_DEBUG", "Token: " + token);
-        Log.d("AUTH_DEBUG", "UserId: " + userId);
-        Log.d("AUTH_DEBUG", "Username: " + username);
-        Toast.makeText(this, "Logged in as: " + username, Toast.LENGTH_LONG).show();
     }
 
     @SuppressLint("SetTextI18n")
@@ -456,10 +449,18 @@ public class MailActivity extends AppCompatActivity {
                 // Update the existing label
                 existingLabel.setName(labelName);
                 labelViewModel.update(existingLabel);
+                // Send to server
+                String token = AuthPrefs.getToken(this);
+                String userId = AuthPrefs.getUserId(this);
+                labelViewModel.updateLabelOnServer(this, token, userId, existingLabel.getId(), existingLabel);
             } else {
+                String token = AuthPrefs.getToken(this);
+                String userId = AuthPrefs.getUserId(this);
                 // Create new label
-                LabelItem newLabel = new LabelItem(UserId, labelName);
+                LabelItem newLabel = new LabelItem(userId, labelName);
                 labelViewModel.insert(newLabel);
+                // Send to server
+                labelViewModel.sendLabelToServer(this, token, userId, newLabel);
             }
             dialog.dismiss();
         });
@@ -510,6 +511,10 @@ public class MailActivity extends AppCompatActivity {
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         btnDelete.setOnClickListener(v -> {
+            // Send to server
+            String token = AuthPrefs.getToken(this);
+            String userId = AuthPrefs.getUserId(this);
+            labelViewModel.deleteLabelOnServer(this, token, userId, label.getId());
             // Delete the label
             labelViewModel.delete(label);
             dialog.dismiss();

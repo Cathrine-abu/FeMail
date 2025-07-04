@@ -12,7 +12,7 @@ import java.util.List;
 @Dao
 public interface LabelDao {
 
-    @Query("SELECT * FROM labels WHERE :userId = :userId")
+    @Query("SELECT * FROM labels WHERE userId = :userId")
     LiveData<List<LabelItem>> getAllLabels(String userId);
     @Query("SELECT * FROM labels WHERE id = :id")
     LabelItem getLabel(int id);
@@ -22,4 +22,6 @@ public interface LabelDao {
     void update(LabelItem label);
     @Delete
     void delete(LabelItem... label);
+    @Query("DELETE FROM labels")
+    void deleteAll();
 }
