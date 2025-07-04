@@ -23,6 +23,9 @@ public class LabelViewModel extends AndroidViewModel {
     public LiveData<List<LabelItem>> getAllLabels(String UserId) {
         return repository.getAllLabels(UserId);
     }
+    public LabelItem getLabelByName(String labelName) {
+        return repository.getLabelByName(labelName);
+    }
 
     public void refreshLabels(String token, String userId) {
         repository.fetchLabelsFromServer(token, userId);

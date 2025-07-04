@@ -34,6 +34,9 @@ public class LabelRepository {
     public LiveData<List<LabelItem>> getAllLabels(String userId) {
         return labelDao.getAllLabels(userId);
     }
+    public LabelItem getLabelByName(String labelName) {
+        return labelDao.getLabelByName(labelName);
+    }
 
     // --- ROOM ---
     public void insert(LabelItem label) {
