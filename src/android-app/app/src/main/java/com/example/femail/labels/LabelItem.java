@@ -11,7 +11,7 @@ public class LabelItem {
     @NonNull
     public String userId;
     public String name;
-    public LabelItem(String userId, String name) {
+    public LabelItem(@NonNull String userId, String name) {
         this.userId = userId;
         this.name = name;
     }
@@ -20,5 +20,8 @@ public class LabelItem {
     public String getName() { return name; }
     public void setName(String name) {
         this.name = name;
+    }
+    public void setUserId(@NonNull String userId) {
+        this.userId = userId;
     }
 }

@@ -1,6 +1,7 @@
 package com.example.femail;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,11 +19,14 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.femail.Mails.MoveCategoryAdapter;
 import com.example.femail.labels.LabelItem;
+import com.example.femail.labels.LabelSelectionDialog;
 import com.example.femail.labels.LabelViewModel;
+import com.example.femail.UserViewModel;
 import com.example.femail.Mails.MailItem;
 import com.example.femail.Mails.MailViewModel;
 import com.example.femail.MailFragments.InboxFragment;
@@ -35,11 +39,21 @@ import com.example.femail.MailFragments.DraftsFragment;
 import com.example.femail.MailFragments.SpamFragment;
 import com.example.femail.MailFragments.StarredFragment;
 import com.example.femail.MailFragments.TrashFragment;
+import com.example.femail.SearchFragment;
+import com.example.femail.LabelFragment;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.example.femail.AuthPrefs;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import androidx.appcompat.app.AppCompatDelegate;
+import android.util.Base64;
+import android.graphics.BitmapFactory;
+import android.graphics.Bitmap;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Executors;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -49,7 +63,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class MailActivity extends AppCompatActivity {
-    private String UserId = "1";
     private List<LabelItem> cachedLabels = Collections.emptyList();
     private SwitchMaterial darkModeSwitch;
     private EditText searchInput;
@@ -57,6 +70,7 @@ public class MailActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     private ExtendedFloatingActionButton composeBtn;
     private LabelViewModel labelViewModel;
+    private UserViewModel userViewModel;
     private MailViewModel mailViewModel;
     private NavigationView navigationView;
     private final int LABEL_GROUP_ID = R.id.group_labels;
@@ -84,6 +98,20 @@ public class MailActivity extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigation_view);
 
+        // Present profile image
+        userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
+        String token = AuthPrefs.getToken(MailActivity.this);
+        String userId = AuthPrefs.getUserId(MailActivity.this);
+        userViewModel.getUserFromServer(token, userId).observe(MailActivity.this, user -> {
+            String base64String = user.image;
+            if (base64String != null && base64String.startsWith("data:image")) {
+                base64String = base64String.substring(base64String.indexOf(",") + 1);
+            }
+            byte[] decodedBytes = Base64.decode(base64String, Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
+            profilePic.setImageBitmap(bitmap);
+        });
+
         clearSearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -98,6 +126,8 @@ public class MailActivity extends AppCompatActivity {
                     String searchText = searchInput.getText().toString().trim();
                     if (!searchText.isEmpty()) {
                         Toast.makeText(MailActivity.this, "Searching for: " + searchText, Toast.LENGTH_SHORT).show();
+                        navigateToFragment(new SearchFragment());
+                        return true;
                     }
                     return true;
                 }
@@ -108,7 +138,11 @@ public class MailActivity extends AppCompatActivity {
         profilePic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showProfilePopup();
+                String token = AuthPrefs.getToken(MailActivity.this);
+                String userId = AuthPrefs.getUserId(MailActivity.this);
+                userViewModel.getUserFromServer(token, userId).observe(MailActivity.this, user -> {
+                    showProfilePopup(user);
+                });
             }
         });
 
@@ -126,11 +160,10 @@ public class MailActivity extends AppCompatActivity {
             }
         });
 
-
         // MVVM: Observe labels and inject into menu
         labelViewModel = new ViewModelProvider(this).get(LabelViewModel.class);
         mailViewModel = new ViewModelProvider(this).get(MailViewModel.class);
-        labelViewModel.getAllLabels(UserId).observe(this, labels -> {
+        labelViewModel.getAllLabels(userId).observe(this, labels -> {
             cachedLabels = (labels != null) ? labels : Collections.emptyList();
             Menu menu = navigationView.getMenu();
             menu.removeGroup(LABEL_GROUP_ID);
@@ -153,11 +186,14 @@ public class MailActivity extends AppCompatActivity {
 
                     // Handle clicks on the menu item text itself
                     menuItem.setOnMenuItemClickListener(item -> {
+                        LabelFragment fragment = LabelFragment.newInstance(label.getName());
+                        navigateToFragment(fragment);
                         return true;
                     });
                 }
             }
         });
+        labelViewModel.refreshLabels(token, userId);
 
         // Handle label clicks
         navigationView.setNavigationItemSelectedListener(item -> {
@@ -198,42 +234,27 @@ public class MailActivity extends AppCompatActivity {
                 showCreateOrEditLabelPopup(null);
                 return true;
             }
-            
-            // Handle label clicks (if any labels are clicked)
-            String labelName = item.getTitle().toString();
-            drawerLayout.closeDrawers();
-            return true;
+            else {
+                String labelName = item.getTitle().toString();
+                LabelFragment fragment = LabelFragment.newInstance(labelName);
+                navigateToFragment(fragment);
+                return true;
+            }
         });
 
         // Set initial fragment (Inbox by default)
         if (savedInstanceState == null) {
             navigateToFragment(new InboxFragment());
         }
-
-        // Debug: Show logged-in user and token
-        String token = AuthPrefs.getToken(this);
-        String userId = AuthPrefs.getUserId(this);
-        String username = AuthPrefs.getUsername(this);
-        Log.d("AUTH_DEBUG", "Token: " + token);
-        Log.d("AUTH_DEBUG", "UserId: " + userId);
-        Log.d("AUTH_DEBUG", "Username: " + username);
-        Toast.makeText(this, "Logged in as: " + username, Toast.LENGTH_LONG).show();
     }
 
     @SuppressLint("SetTextI18n")
-    private void showProfilePopup() {
+    private void showProfilePopup(User user) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_profile, null);
+        Toast.makeText(MailActivity.this, user.image, Toast.LENGTH_SHORT).show();
 
         Resources res = getResources();
-        // Example user object (replace with your actual user data)
-        String username = "shirafis";
-        String fullName = "Shira Fisher";
-        String gender = "female";
-        String phone = "123456789";
-        String birthday = "2000-01-01";
-
-        ImageView profileImage = view.findViewById(R.id.profileImage);
         TextView usernameText = view.findViewById(R.id.usernameText);
         TextView fullNameGender = view.findViewById(R.id.fullNameGender);
         TextView birthdayText = view.findViewById(R.id.birthdayText);
@@ -241,20 +262,36 @@ public class MailActivity extends AppCompatActivity {
         Button logoutButton = view.findViewById(R.id.logoutButton);
 
         String genderIcon = "";
-        if (gender.equals(res.getString(R.string.gender_female))) {
+        if (user.gender.equals(res.getString(R.string.gender_female))) {
             genderIcon = res.getString(R.string.female_icon);
-        } else if (gender.equals(res.getString(R.string.gender_male))) {
+        } else if (user.gender.equals(res.getString(R.string.gender_male))) {
             genderIcon = res.getString(R.string.male_icon);
         }
-        usernameText.setText(res.getString(R.string.profile_end_mail, username));
-        fullNameGender.setText(res.getString(R.string.profile_hi, fullName, genderIcon));
-        birthdayText.setText(getString(R.string.profile_birthday, birthday));
-        phoneText.setText(res.getString(R.string.profile_phone, phone));
+        usernameText.setText(res.getString(R.string.profile_end_mail, user.username));
+        fullNameGender.setText(res.getString(R.string.profile_hi, user.fullName, genderIcon));
+        birthdayText.setText(getString(R.string.profile_birthday, user.birthDate));
+        phoneText.setText(res.getString(R.string.profile_phone, user.phone));
+
+        // Present profile image
+        ImageView profileImage = view.findViewById(R.id.profileImage);
+        String base64String = user.image;
+        if (base64String != null && base64String.startsWith("data:image")) {
+            base64String = base64String.substring(base64String.indexOf(",") + 1);
+        }
+        byte[] decodedBytes = Base64.decode(base64String, Base64.DEFAULT);
+        Bitmap bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
+        profileImage.setImageBitmap(bitmap);
 
         logoutButton.setOnClickListener(v -> {
             // Clear token or session
+            AuthPrefs.clearAuthData(this);
             Toast.makeText(this, R.string.profile_log_out, Toast.LENGTH_SHORT).show();
-            // Optionally finish() or navigate
+            // Navigate to MainActivity
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // Optional: clear back stack
+            startActivity(intent);
+            // Close current activity
+            finish();
         });
 
         builder.setView(view);
@@ -459,10 +496,18 @@ public class MailActivity extends AppCompatActivity {
                 // Update the existing label
                 existingLabel.setName(labelName);
                 labelViewModel.update(existingLabel);
+                // Send to server
+                String token = AuthPrefs.getToken(this);
+                String userId = AuthPrefs.getUserId(this);
+                labelViewModel.updateLabelOnServer(this, token, userId, existingLabel.getId(), existingLabel);
             } else {
+                String token = AuthPrefs.getToken(this);
+                String userId = AuthPrefs.getUserId(this);
                 // Create new label
-                LabelItem newLabel = new LabelItem(UserId, labelName);
+                LabelItem newLabel = new LabelItem(userId, labelName);
                 labelViewModel.insert(newLabel);
+                // Send to server
+                labelViewModel.sendLabelToServer(this, token, userId, newLabel);
             }
             dialog.dismiss();
         });
@@ -513,6 +558,10 @@ public class MailActivity extends AppCompatActivity {
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         btnDelete.setOnClickListener(v -> {
+            // Send to server
+            String token = AuthPrefs.getToken(this);
+            String userId = AuthPrefs.getUserId(this);
+            labelViewModel.deleteLabelOnServer(this, token, userId, label.getId());
             // Delete the label
             labelViewModel.delete(label);
             dialog.dismiss();

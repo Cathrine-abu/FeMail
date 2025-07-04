@@ -34,14 +34,15 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/profileImage"
             android:layout_width="110dp"
             android:layout_height="110dp"
-            android:layout_marginBottom="12dp"
+            android:layout_marginStart="12dp"
             android:scaleType="centerCrop"
             android:src="@drawable/ic_profile_mail"
-            android:layout_gravity="center_horizontal"/>
+            android:layout_gravity="center"
+            app:shapeAppearanceOverlay="@style/CircleImageViewStyle" />
 
         <TextView
             android:id="@+id/fullNameGender"
@@ -66,6 +67,7 @@
             android:layout_marginBottom="16dp"
             android:textSize="22sp"
             android:layout_gravity="center_horizontal"/>
+
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/logoutButton"
