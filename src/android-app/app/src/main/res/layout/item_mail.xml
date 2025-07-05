@@ -4,8 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="12dp"
-    android:background="@android:color/white">
+    android:padding="12dp">
 
     <FrameLayout
         android:id="@+id/profile_container"
@@ -64,7 +63,6 @@
             android:layout_height="wrap_content"
             android:text="Short body content..."
             android:textSize="12sp"
-            android:textColor="#777777"
             android:maxLines="1"
             android:ellipsize="end" />
     </LinearLayout>
@@ -81,7 +79,6 @@
             android:layout_height="wrap_content"
             android:text="13:47"
             android:textSize="11sp"
-            android:textColor="#999999"
             android:textStyle="bold" />
 
         <ImageView
