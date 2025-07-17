@@ -66,7 +66,7 @@ public class MailActivity extends AppCompatActivity {
     private List<LabelItem> cachedLabels = Collections.emptyList();
     private SwitchMaterial darkModeSwitch;
     private EditText searchInput;
-    private ImageView profilePic, clearSearch, hamburgerMenu;
+    private ImageView profilePic, clearSearch, hamburgerMenu, iconSearch;
     private DrawerLayout drawerLayout;
     private ExtendedFloatingActionButton composeBtn;
     private LabelViewModel labelViewModel;
@@ -93,6 +93,7 @@ public class MailActivity extends AppCompatActivity {
         searchInput = findViewById(R.id.searchInput);
         profilePic = findViewById(R.id.profilePic);
         clearSearch = findViewById(R.id.clearSearch);
+        iconSearch = findViewById(R.id.searchIcon);
         composeBtn = findViewById(R.id.composeBtn);
         hamburgerMenu = findViewById(R.id.hamburgerMenu);
         drawerLayout = findViewById(R.id.drawerLayout);
@@ -112,27 +113,20 @@ public class MailActivity extends AppCompatActivity {
             profilePic.setImageBitmap(bitmap);
         });
 
+        // Search functionality
         clearSearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 searchInput.setText("");
             }
         });
-
-        searchInput.setOnKeyListener(new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-                if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN) {
-                    String searchText = searchInput.getText().toString().trim();
-                    if (!searchText.isEmpty()) {
-                        Toast.makeText(MailActivity.this, "Searching for: " + searchText, Toast.LENGTH_SHORT).show();
-                        navigateToFragment(new SearchFragment());
-                        return true;
-                    }
-                    return true;
-                }
-                return false;
+        iconSearch.setOnClickListener(v -> triggerSearch());
+        searchInput.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN) {
+                triggerSearch();
+                return true;
             }
+            return false;
         });
 
         profilePic.setOnClickListener(new View.OnClickListener() {
@@ -252,7 +246,6 @@ public class MailActivity extends AppCompatActivity {
     private void showProfilePopup(User user) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_profile, null);
-        Toast.makeText(MailActivity.this, user.image, Toast.LENGTH_SHORT).show();
 
         Resources res = getResources();
         TextView usernameText = view.findViewById(R.id.usernameText);
@@ -285,7 +278,6 @@ public class MailActivity extends AppCompatActivity {
         logoutButton.setOnClickListener(v -> {
             // Clear token or session
             AuthPrefs.clearAuthData(this);
-            Toast.makeText(this, R.string.profile_log_out, Toast.LENGTH_SHORT).show();
             // Navigate to MainActivity
             Intent intent = new Intent(this, MainActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // Optional: clear back stack
@@ -627,60 +619,12 @@ public class MailActivity extends AppCompatActivity {
         refreshMailsFromServer();
     }
 
-    private void refreshMailsFromServer() {
-        String token = AuthPrefs.getToken(this);
-        String userId = AuthPrefs.getUserId(this);
-        mailViewModel.fetchMailsFromServer(token, userId).observe(this, mails -> {
-            for (MailItem mail : mails) {
-                mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
-            }
-        });
-    }
-
-    // Example for starring a mail (call this when user toggles star):
-    private void starMail(MailItem mail) {
-        mail.isStarred = !mail.isStarred;
-        mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this)); // Local update
-        String token = AuthPrefs.getToken(this);
-        String userId = AuthPrefs.getUserId(this);
-        mailViewModel.updateMailOnServer(token, userId, mail, success -> {}); // Server update
-        mailViewModel.fetchMailsFromServer(token, userId);
-    }
-
-    // Example for moving a mail (e.g., to Trash):
-    private void moveMailToTrash(MailItem mail) {
-        String userId = AuthPrefs.getUserId(this);
-        mail.isDeleted = true;
-        mail.category = "Trash";
-        mail.owner = userId;
-        mail.user = userId;
-        mailViewModel.update(mail, AuthPrefs.getToken(this), userId);
-        String token = AuthPrefs.getToken(this);
-        mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
-        mailViewModel.fetchMailsFromServer(token, userId);
-    }
-
-    // Example for restoring a mail from Trash:
-    private void restoreMailFromTrash(MailItem mail) {
-        mail.isDeleted = false;
-        mail.category = "Primary";
-        mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
-        String token = AuthPrefs.getToken(this);
-        String userId = AuthPrefs.getUserId(this);
-        mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
-        mailViewModel.fetchMailsFromServer(token, userId);
-    }
-
-    // Example for marking as spam:
-    private void markMailAsSpam(MailItem mail) {
-        mail.isSpam = true;
-        mail.previousDirection = mail.direction;
-        mail.direction = java.util.List.of("spam");
-        mail.category = "Spam";
-        mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
-        String token = AuthPrefs.getToken(this);
-        String userId = AuthPrefs.getUserId(this);
-        mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
-        mailViewModel.fetchMailsFromServer(token, userId);
+    private void triggerSearch() {
+        String searchText = searchInput.getText().toString().trim();
+        if (!searchText.isEmpty()) {
+            SearchFragment searchFragment = new SearchFragment();
+            searchFragment.setExternalSearchInput(searchInput);
+            navigateToFragment(searchFragment);
+        }
     }
 }

@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="@android:color/white">
+    android:background="?attr/colorSurface">
 
     <!-- Top bar -->
     <LinearLayout
@@ -118,7 +118,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:text="13:47"
-                    android:textColor="#888888"
                     android:textSize="12sp"
                     android:textStyle="bold" />
             </LinearLayout>
