@@ -39,7 +39,12 @@ public class UpdatesFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), "updates", null, (mail, position) -> {
             // Update the mail in the database when star is clicked
-            mailViewModel.update(mail);
+            String userId = AuthPrefs.getUserId(requireContext());
+            mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), userId);
+            String token = AuthPrefs.getToken(requireContext());
+            mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
+            mailViewModel.fetchMailsFromServer(token, userId);
+            refreshMailsFromServer();
         });
         recyclerView.setAdapter(mailAdapter);
 
@@ -50,5 +55,15 @@ public class UpdatesFragment extends Fragment {
             });
 
         return view;
+    }
+
+    private void refreshMailsFromServer() {
+        String token = AuthPrefs.getToken(requireContext());
+        String userId = AuthPrefs.getUserId(requireContext());
+        mailViewModel.fetchMailsFromServer(token, userId).observe(getViewLifecycleOwner(), mails -> {
+            for (MailItem mail : mails) {
+                mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
+            }
+        });
     }
 } 

@@ -17,6 +17,7 @@ import com.example.femail.Mails.MailViewModel;
 import com.example.femail.R;
 import com.example.femail.AuthPrefs;
 
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +40,10 @@ public class StarredFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), "starred", null, (mail, position) -> {
             // Update the mail in the database when star is clicked
-            mailViewModel.update(mail);
+            mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
+            String token = AuthPrefs.getToken(requireContext());
+            mailViewModel.updateMailOnServer(token, AuthPrefs.getUserId(requireContext()), mail, success -> {});
+            mailViewModel.fetchMailsFromServer(token, AuthPrefs.getUserId(requireContext()));
         });
         recyclerView.setAdapter(mailAdapter);
 
@@ -51,5 +55,15 @@ public class StarredFragment extends Fragment {
             });
 
         return view;
+    }
+
+    private void refreshMailsFromServer() {
+        String token = AuthPrefs.getToken(requireContext());
+        String userId = AuthPrefs.getUserId(requireContext());
+        mailViewModel.fetchMailsFromServer(token, userId).observe(getViewLifecycleOwner(), mails -> {
+            for (MailItem mail : mails) {
+                mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
+            }
+        });
     }
 }

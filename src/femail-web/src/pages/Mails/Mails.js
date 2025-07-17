@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../Sidebar/Sidebar";
 import Topbar from "../Topbar/Topbar";
@@ -46,6 +46,109 @@ const Mail = () => {
   const [starredMails, setStarredMails] = useState([]);
   const [trashMails, setTrashMails] = useState([]);
   const { labels, setLabels, } = useGetLabels(token, userId);
+
+  // Fetch all mails from server
+  const fetchAllMails = useCallback(() => {
+    if (!token || !userId) return;
+    
+    fetch("http://localhost:8080/api/mails", {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "user-id": userId
+      }
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch mails");
+        return res.json();
+      })
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          console.error("Expected an array but got:", data);
+          return;
+        }
+
+        // Filter mails by type with stable sorting
+        const inbox = data.filter(mail => 
+          Array.isArray(mail.direction) &&
+          mail.direction.includes("received") &&
+          (mail.isDeleted === false || mail.isDeleted === undefined) &&
+          mail.isSpam === false
+        ).sort((a, b) => {
+          // Primary sort by timestamp (newest first)
+          const timeDiff = new Date(b.timestamp) - new Date(a.timestamp);
+          if (timeDiff !== 0) return timeDiff;
+          // Secondary sort by ID for stability
+          return a.id.localeCompare(b.id);
+        });
+        
+        const sent = data.filter(mail => 
+          mail.direction.includes("sent") && 
+          (mail.isDeleted === false || mail.isDeleted === undefined)
+        ).sort((a, b) => {
+          const timeDiff = new Date(b.timestamp) - new Date(a.timestamp);
+          if (timeDiff !== 0) return timeDiff;
+          return a.id.localeCompare(b.id);
+        });
+        
+        const drafts = data.filter(mail => 
+          mail.direction.includes("draft") &&
+          (mail.isDeleted === false || mail.isDeleted === undefined) &&
+          mail.isDraft === true
+        ).sort((a, b) => {
+          const timeDiff = new Date(b.timestamp) - new Date(a.timestamp);
+          if (timeDiff !== 0) return timeDiff;
+          return a.id.localeCompare(b.id);
+        });
+        
+        const spam = data.filter(mail => 
+          mail.isSpam === true &&
+          (mail.isDeleted === false || mail.isDeleted === undefined)
+        ).sort((a, b) => {
+          const timeDiff = new Date(b.timestamp) - new Date(a.timestamp);
+          if (timeDiff !== 0) return timeDiff;
+          return a.id.localeCompare(b.id);
+        });
+        
+        const starred = data.filter(mail => 
+          mail.isStarred === true &&
+          (mail.isDeleted === false || mail.isDeleted === undefined)
+        ).sort((a, b) => {
+          const timeDiff = new Date(b.timestamp) - new Date(a.timestamp);
+          if (timeDiff !== 0) return timeDiff;
+          return a.id.localeCompare(b.id);
+        });
+        
+        const trash = data.filter(mail => 
+          mail.isDeleted === true
+        ).sort((a, b) => {
+          const timeDiff = new Date(b.timestamp) - new Date(a.timestamp);
+          if (timeDiff !== 0) return timeDiff;
+          return a.id.localeCompare(b.id);
+        });
+
+        // Update all states
+        setInboxMails(inbox);
+        setSendMails(sent);
+        setDraftMails(drafts);
+        setSpamMails(spam);
+        setStarredMails(starred);
+        setTrashMails(trash);
+      })
+      .catch((err) => {
+        console.error("Error fetching mails:", err);
+      });
+  }, [token, userId]);
+
+  useEffect(() => {
+    fetchAllMails();
+    // Refresh every 2 seconds for near real-time updates
+    const interval = setInterval(() => {
+      fetchAllMails();
+    }, 2000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [fetchAllMails]);
 
   useEffect(() => {
     setMailCounts({

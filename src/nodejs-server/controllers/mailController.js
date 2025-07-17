@@ -11,9 +11,22 @@ exports.getAllMails = async (req, res) => {
     }
 
     try {
-        const userMails = await storeMails.getAllMailsByUser(userId);
-        const recentMails = userMails.slice(-50).reverse();
-        res.status(200).json(recentMails);
+        const since = req.query.since;
+        let userMails;
+        
+        if (since) {
+            // Fetch only mails newer than the since timestamp
+            userMails = await storeMails.getMailsByUserSince(userId, since);
+            // console.log('[MAIL FETCH]', userId, 'since', since, 'found', userMails.length, 'new mails');
+        } else {
+            // Fetch all mails (existing behavior)
+            userMails = await storeMails.getAllMailsByUser(userId);
+            const recentMails = userMails.slice(-50).reverse();
+            // console.log('[MAIL FETCH]', userId, recentMails.map(m => ({id: m.id, time: m.time, subject: m.subject})));
+            userMails = recentMails;
+        }
+        
+        res.status(200).json(userMails);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -63,6 +76,22 @@ exports.sendMail = async (req, res) => {
         }
     }
 
+    // Append URLs to data/urls.txt if mail is marked as spam (same as PATCH handler)
+    if (isSpam && urls.length > 0) {
+        const fs = require('fs');
+        const path = require('path');
+        const urlsFile = path.join(__dirname, '../../data/urls.txt');
+        const urlsToAppend = urls.join('\n') + '\n';
+        //console.log('[urls.txt] Attempting to append URLs:', urls, 'to', urlsFile);
+        fs.appendFile(urlsFile, urlsToAppend, (err) => {
+            if (err) {
+                console.error('[urls.txt] Failed to append URLs:', err);
+            } else {
+                //console.log('[urls.txt] Successfully appended URLs:', urls);
+            }
+        });
+    }
+
     const timestamp = new Date().toISOString();
     const groupId = `${Date.now()}_${from}_${Math.floor(Math.random() * 100000)}`;
 
@@ -109,7 +138,7 @@ exports.sendMail = async (req, res) => {
             : [direction || (isDraft ? 'draft' : 'sent')];
 
 
-    const sentMail = storeMails.createMail({
+    const sentMail = await storeMails.createMail({
         subject,
         body,
         from: senderUser.username,
@@ -127,9 +156,9 @@ exports.sendMail = async (req, res) => {
     });
 
     return res.status(201).location(`/api/mails/${sentMail.id}`).json({
-        id: `${sentMail.id}`,
-        isSpam: `${sentMail.isSpam}`,
-        timestamp: `${sentMail.timestamp}`
+        id: sentMail.id,
+        isSpam: sentMail.isSpam,
+        timestamp: sentMail.timestamp
     });
 };
 
@@ -157,20 +186,58 @@ exports.updateMail = async (req, res) => {
     const userId = req.header('user-id');
     if (!userId) return res.status(400).json({ error: 'Missing user-id header' });
 
+    // Debug log: mail ID and incoming PATCH body
+    //console.log(`[PATCH /api/mails/${id}] userId=${userId} body=`, req.body);
+
     try {
         const mail = await storeMails.getMail(id);
         if (!mail || mail.owner !== userId) return res.status(404).json({ error: 'Mail not found' });
 
         const updatedFields = req.body;
+        // Ensure PATCH can update isSpam, isDeleted, isStarred, category, etc.
+        // (No code change needed if storeMails.updateMail uses $set)
+        // Optionally, validate allowed fields here
+
+        // Always set previousDirection if present in PATCH body
+        if (updatedFields.previousDirection !== undefined) {
+            mail.previousDirection = updatedFields.previousDirection;
+        }
+
+        if (mail.isSpam && updatedFields.isSpam === false && mail.previousDirection?.length > 0) {
+        updatedFields.direction = mail.previousDirection;
+        updatedFields.previousDirection = [];
+        }
+
         const urlsToCheck = [];
         const urlRegex = /(https?:\/\/)?(www\.)?[^\s]+\.[^\s]+/g;
 
+        // Debug: Log subject and body being checked for URLs
+        //console.log('[PATCH] Checking subject for URLs:', updatedFields.subject);
+        //console.log('[PATCH] Checking body for URLs:', updatedFields.body);
+
+        // Extract URLs from updated fields if provided
         if (updatedFields.subject) {
             urlsToCheck.push(...(updatedFields.subject.match(urlRegex) || []));
         }
         if (updatedFields.body) {
             urlsToCheck.push(...(updatedFields.body.match(urlRegex) || []));
         }
+
+        // If marking as spam and no URLs found in updates, extract from existing mail content
+        if (updatedFields.isSpam === true && urlsToCheck.length === 0) {
+            const existingUrls = [];
+            if (mail.subject) {
+                existingUrls.push(...(mail.subject.match(urlRegex) || []));
+            }
+            if (mail.body) {
+                existingUrls.push(...(mail.body.match(urlRegex) || []));
+            }
+            urlsToCheck.push(...existingUrls);
+            //console.log('[PATCH] Extracted URLs from existing mail content:', existingUrls);
+        }
+
+        //console.log('[PATCH] Final URLs to check:', urlsToCheck);
+        //console.log('[PATCH] Updated fields:', updatedFields);
 
         let isSpam = typeof updatedFields.isSpam === 'boolean' ? updatedFields.isSpam : false;
 
@@ -200,9 +267,12 @@ exports.updateMail = async (req, res) => {
             const path = require('path');
             const urlsFile = path.join(__dirname, '../../data/urls.txt');
             const urlsToAppend = urlsToCheck.join('\n') + '\n';
+            //console.log('[urls.txt] Attempting to append URLs to spam mail:', urlsToCheck, 'to', urlsFile);
             fs.appendFile(urlsFile, urlsToAppend, (err) => {
                 if (err) {
-                    console.error('Failed to append URLs to urls.txt:', err);
+                    console.error('[urls.txt] Failed to append URLs:', err);
+                } else {
+                    //console.log('[urls.txt] Successfully appended URLs:', urlsToCheck);
                 }
             });
         }

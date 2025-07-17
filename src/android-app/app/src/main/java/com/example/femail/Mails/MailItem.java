@@ -6,6 +6,7 @@ import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 import com.example.femail.Converters;
+import com.google.gson.annotations.SerializedName;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -28,6 +29,12 @@ public class MailItem {
     public String groupId;
     public String category;
     public String time;
+    
+    // Add timestamp field to handle backend response
+    @SerializedName("timestamp")
+    @Ignore
+    public String timestamp;
+    
     public boolean isStarred;
     public boolean isRead;
     public boolean isSpam;
@@ -36,7 +43,7 @@ public class MailItem {
     @TypeConverters(Converters.class)
     public List<String> direction;
 
-    @Ignore
+    @TypeConverters(Converters.class)
     public List<String> previousDirection;
 
     public boolean isSelected = false;
@@ -90,9 +97,42 @@ public class MailItem {
         this.userId = userId;
     }
 
+    // Method to convert timestamp to time format for sorting
+    public void convertTimestampToTime() {
+        if (timestamp != null && !timestamp.isEmpty() && (time == null || time.isEmpty())) {
+            // Convert ISO timestamp to the format expected by the app
+            try {
+                // Parse ISO timestamp and convert to app format
+                java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+                java.util.Date date = isoFormat.parse(timestamp);
+                java.text.SimpleDateFormat appFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                this.time = appFormat.format(date);
+            } catch (Exception e) {
+                // If parsing fails, try alternative format
+                try {
+                    java.text.SimpleDateFormat altFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
+                    java.util.Date date = altFormat.parse(timestamp);
+                    java.text.SimpleDateFormat appFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                    this.time = appFormat.format(date);
+                } catch (Exception e2) {
+                    // If all parsing fails, use timestamp as is
+                    this.time = timestamp;
+                }
+            }
+        }
+    }
+
     public String getSubject() { return subject; }
     public String getBody() { return body; }
     public String getTime() { return time; }
     public boolean getStarred() { return isStarred; }
     public String getSender() { return from; }
-} 
+
+    public String getId() {
+        return id;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+}

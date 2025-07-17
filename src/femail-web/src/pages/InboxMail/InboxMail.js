@@ -20,36 +20,10 @@ const InboxMail = () => {
   const [showDraftEdit, setShowDraftEdit] = useState(false);
   const [selectedDraft, setSelectedDraft] = useState(null);
 
-  useEffect(() => {
-
-  fetch("http://localhost:8080/api/mails", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
-      "user-id": userId
-    }
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Failed to fetch mails");
-      return res.json();
-    })
-    .then((data) => {
-      const filtered = data.filter(
-        (mail) =>
-          Array.isArray(mail.direction) &&
-          mail.direction.includes( "received" ) &&
-          (mail.category ?? "Primary") === selectedTab &&
-          (mail.isDeleted === false || mail.isDeleted === undefined) &&
-          mail.isSpam === false
-      );
-      setInboxMails(filtered);
-    })
-    .catch((err) => {
-      console.error(err);
-      
-    });
-}, [token, userId, selectedTab, setInboxMails]);
+  // Filter inbox mails based on selected tab
+  const filteredInboxMails = inboxMails.filter(mail => 
+    (mail.category ?? "Primary") === selectedTab
+  );
 
 
   const { deleteSelectedMails, markSpam, handleStarredMail, handleDeleteMail } = useMails(token, userId, inboxMails, setInboxMails);
@@ -136,9 +110,9 @@ const InboxMail = () => {
       />
 
       {error && <p className="error">{error}</p>}
-      {inboxMails.length === 0 && !error && <p>No messages.</p>}
+      {filteredInboxMails.length === 0 && !error && <p>No messages.</p>}
       <ul className="mail-list">
-        {inboxMails.map((mail) => (
+        {filteredInboxMails.map((mail) => (
           <li
             key={mail.id}
             className={`mail-item ${mail.isRead ? "read" : "unread"}`}

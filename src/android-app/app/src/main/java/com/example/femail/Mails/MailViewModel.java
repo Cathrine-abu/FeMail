@@ -8,10 +8,11 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class MailViewModel extends AndroidViewModel {
     private final MailRepository repository;
-    
+
     // Error and loading state management
     private MutableLiveData<String> errorMessage = new MutableLiveData<>();
     private MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
@@ -86,16 +87,16 @@ public class MailViewModel extends AndroidViewModel {
         errorMessage.setValue(null);
     }
 
-    public void insert(MailItem mail) {
-        repository.insert(mail);
+    public void insert(MailItem mail, String token, String userId) {
+        repository.insert(mail, token, userId);
     }
 
-    public void delete(MailItem mail) {
-        repository.delete(mail);
+    public void delete(MailItem mail, String token, String userId) {
+        repository.delete(mail, token, userId);
     }
 
-    public void update(MailItem mail) {
-        repository.update(mail);
+    public void update(MailItem mail, String token, String userId) {
+        repository.update(mail, token, userId);
     }
 
     public void deleteAll() {
@@ -117,4 +118,30 @@ public class MailViewModel extends AndroidViewModel {
     public void unmarkMailAsSpamOnServer(String token, String userId, String mailId) {
         repository.unmarkMailAsSpam(token, userId, mailId);
     }
-} 
+
+    public void updateMailOnServer(String token, String userId, MailItem mail, java.util.function.Consumer<Boolean> callback) {
+        repository.updateMailOnServer(token, userId, mail, callback);
+    }
+
+    public LiveData<List<MailItem>> fetchMailsFromServer(String token, String userId) {
+        return repository.fetchMailsFromServer(token, userId);
+    }
+
+    public LiveData<List<MailItem>> fetchNewMailsFromServer(String token, String userId) {
+        return repository.fetchNewMailsFromServer(token, userId);
+    }
+
+    public void updateMailOnServerWithRoom(String token, String userId, MailItem mail) {
+        repository.updateMailOnServer(token, userId, mail, success -> {
+            if (success) {
+                update(mail, token, userId); // Only update Room if backend succeeded
+            } else {
+                errorMessage.postValue("Failed to update mail on server.");
+            }
+        });
+    }
+
+    public LiveData<MailItem> getMailById(String mailId) {
+        return repository.getMailById(mailId);
+    }
+}

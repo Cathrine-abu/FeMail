@@ -39,18 +39,41 @@ public class TrashFragment extends Fragment {
         recyclerView = view.findViewById(R.id.mailListView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), "trash", null, (mail, position) -> {
-            // Update the mail in the database when star is clicked
-            mailViewModel.update(mail);
+            String token = AuthPrefs.getToken(requireContext());
+            String userId = AuthPrefs.getUserId(requireContext());
+            mailViewModel.getMailById(mail.id).observe(getViewLifecycleOwner(), dbMail -> {
+                if (dbMail != null) {
+                    dbMail.isDeleted = true;
+                    dbMail.owner = userId;
+                    dbMail.user = userId;
+                    mailViewModel.updateMailOnServerWithRoom(token, userId, dbMail);
+                    mailViewModel.fetchMailsFromServer(token, userId);
+                }
+            });
         });
         recyclerView.setAdapter(mailAdapter);
 
         mailViewModel = new ViewModelProvider(requireActivity()).get(MailViewModel.class);
-
+        
+        // Fetch fresh mails from server when fragment loads
+        refreshMailsFromServer();
+        
         mailViewModel.getTrashMails(AuthPrefs.getUserId(requireContext()))
             .observe(getViewLifecycleOwner(), mails -> {
                 mailAdapter.setMailList(mails);
+                recyclerView.scrollToPosition(0);
             });
 
         return view;
+    }
+
+    private void refreshMailsFromServer() {
+        String token = AuthPrefs.getToken(requireContext());
+        String userId = AuthPrefs.getUserId(requireContext());
+        mailViewModel.fetchMailsFromServer(token, userId).observe(getViewLifecycleOwner(), mails -> {
+            for (MailItem mail : mails) {
+                mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
+            }
+        });
     }
 }

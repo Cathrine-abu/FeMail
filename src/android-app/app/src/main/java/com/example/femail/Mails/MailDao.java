@@ -14,7 +14,7 @@ public interface MailDao {
     @Query("SELECT * FROM mails WHERE userId = :userId ORDER BY time DESC")
     LiveData<List<MailItem>> getAllMails(String userId);
     
-    @Insert
+    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
     void insertMail(MailItem mail);
     
     @Delete
@@ -72,4 +72,10 @@ public interface MailDao {
 
     @Query("SELECT * FROM mails WHERE userId = :userId AND (subject LIKE '%' || :query || '%' OR body LIKE '%' || :query || '%') AND isDeleted = 0 ORDER BY time DESC")
     LiveData<List<MailItem>> searchMails(String query, String userId);
+
+    @Query("SELECT * FROM mails WHERE id = :mailId LIMIT 1")
+    MailItem getMailById(String mailId);
+
+    @Query("SELECT * FROM mails WHERE userId = :userId ORDER BY time DESC LIMIT 1")
+    MailItem getLatestMail(String userId);
 } 

@@ -350,7 +350,11 @@ public class MailActivity extends AppCompatActivity {
                 existingMail.isDraft = true;
                 existingMail.direction = java.util.List.of("draft");
                 existingMail.category = category;
-                mailViewModel.update(existingMail);
+                mailViewModel.update(existingMail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+                String token = AuthPrefs.getToken(this);
+                String userId = AuthPrefs.getUserId(this);
+                mailViewModel.updateMailOnServer(token, userId, existingMail, success -> {});
+                mailViewModel.fetchMailsFromServer(token, userId);
             } else {
                 // Create new draft mail
                 String currentTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
@@ -358,18 +362,23 @@ public class MailActivity extends AppCompatActivity {
                     String.valueOf(System.currentTimeMillis()),
                     mailSubject,
                     mailBody,
-                    "me", // from
+                    AuthPrefs.getUserId(this), // from (userId for backend)
                     mailTo.isEmpty() ? null : java.util.List.of(mailTo),
                     currentTime,
                     false, false, false, true, false, // isStarred, isRead, isSpam, isDraft, isDeleted
                     java.util.List.of("draft"),
-                    "current_user", "current_user", null, category, false,
+                    AuthPrefs.getUserId(this), AuthPrefs.getUserId(this), null, category, false,
                     AuthPrefs.getUserId(this) // userId
                 );
-                mailViewModel.insert(newMail);
+                mailViewModel.insert(newMail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+                String token = AuthPrefs.getToken(this);
+                String userId = AuthPrefs.getUserId(this);
+                mailViewModel.updateMailOnServer(token, userId, newMail, success -> {});
+                mailViewModel.fetchMailsFromServer(token, userId);
             }
             Toast.makeText(this, "Saved as draft", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
+            refreshMailsFromServer();
         });
 
         // Send button - save as sent mail
@@ -399,11 +408,11 @@ public class MailActivity extends AppCompatActivity {
                     existingMail.direction = java.util.List.of("sent");
                 }
                 existingMail.category = category;
-                mailViewModel.update(existingMail);
-                // Send to server
+                mailViewModel.update(existingMail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
                 String token = AuthPrefs.getToken(this);
                 String userId = AuthPrefs.getUserId(this);
-                mailViewModel.sendMailToServer(this, token, userId, existingMail);
+                mailViewModel.updateMailOnServer(token, userId, existingMail, success -> {});
+                mailViewModel.fetchMailsFromServer(token, userId);
             } else {
                 // Create new sent mail
                 String currentTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
@@ -419,22 +428,23 @@ public class MailActivity extends AppCompatActivity {
                     String.valueOf(System.currentTimeMillis()),
                     mailSubject,
                     mailBody,
-                    "me", // from
+                    AuthPrefs.getUserId(this), // from - changed from username to userId
                     java.util.List.of(mailTo),
                     currentTime,
                     false, true, false, false, false, // isStarred, isRead, isSpam, isDraft, isDeleted
                     direction,
-                    "current_user", "current_user", null, category, false,
+                    AuthPrefs.getUserId(this), AuthPrefs.getUserId(this), null, category, false,
                     AuthPrefs.getUserId(this) // userId
                 );
-                mailViewModel.insert(newMail);
-                // Send to server
+                mailViewModel.insert(newMail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
                 String token = AuthPrefs.getToken(this);
                 String userId = AuthPrefs.getUserId(this);
-                mailViewModel.sendMailToServer(this, token, userId, newMail);
+                mailViewModel.updateMailOnServer(token, userId, newMail, success -> {});
+                mailViewModel.fetchMailsFromServer(token, userId);
             }
             Toast.makeText(this, "Mail sent", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
+            refreshMailsFromServer();
         });
         dialog.show();
     }
@@ -510,6 +520,7 @@ public class MailActivity extends AppCompatActivity {
                 labelViewModel.sendLabelToServer(this, token, userId, newLabel);
             }
             dialog.dismiss();
+            refreshMailsFromServer();
         });
 
         dialog.show();
@@ -564,7 +575,6 @@ public class MailActivity extends AppCompatActivity {
             labelViewModel.deleteLabelOnServer(this, token, userId, label.getId());
             // Delete the label
             labelViewModel.delete(label);
-            dialog.dismiss();
         });
 
         dialog.show();
@@ -608,8 +618,69 @@ public class MailActivity extends AppCompatActivity {
     // Add this method to update the mail's category
     private void moveMailToCategory(MailItem mail, String category) {
         mail.category = category.toLowerCase();
-        mailViewModel.update(mail);
+        mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
+        mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
+        mailViewModel.fetchMailsFromServer(token, userId);
         Toast.makeText(this, "Mail moved to " + category, Toast.LENGTH_SHORT).show();
+        refreshMailsFromServer();
     }
 
+    private void refreshMailsFromServer() {
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
+        mailViewModel.fetchMailsFromServer(token, userId).observe(this, mails -> {
+            for (MailItem mail : mails) {
+                mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+            }
+        });
+    }
+
+    // Example for starring a mail (call this when user toggles star):
+    private void starMail(MailItem mail) {
+        mail.isStarred = !mail.isStarred;
+        mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this)); // Local update
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
+        mailViewModel.updateMailOnServer(token, userId, mail, success -> {}); // Server update
+        mailViewModel.fetchMailsFromServer(token, userId);
+    }
+
+    // Example for moving a mail (e.g., to Trash):
+    private void moveMailToTrash(MailItem mail) {
+        String userId = AuthPrefs.getUserId(this);
+        mail.isDeleted = true;
+        mail.category = "Trash";
+        mail.owner = userId;
+        mail.user = userId;
+        mailViewModel.update(mail, AuthPrefs.getToken(this), userId);
+        String token = AuthPrefs.getToken(this);
+        mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
+        mailViewModel.fetchMailsFromServer(token, userId);
+    }
+
+    // Example for restoring a mail from Trash:
+    private void restoreMailFromTrash(MailItem mail) {
+        mail.isDeleted = false;
+        mail.category = "Primary";
+        mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
+        mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
+        mailViewModel.fetchMailsFromServer(token, userId);
+    }
+
+    // Example for marking as spam:
+    private void markMailAsSpam(MailItem mail) {
+        mail.isSpam = true;
+        mail.previousDirection = mail.direction;
+        mail.direction = java.util.List.of("spam");
+        mail.category = "Spam";
+        mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
+        mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
+        mailViewModel.fetchMailsFromServer(token, userId);
+    }
 }

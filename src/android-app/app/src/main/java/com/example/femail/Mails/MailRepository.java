@@ -18,6 +18,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.ArrayList;
 
 public class MailRepository {
 
@@ -83,17 +85,31 @@ public class MailRepository {
         return mailDao.searchMails(query, userId);
     }
 
-    public void insert(MailItem mail) {
-        executorService.execute(() -> mailDao.insertMail(mail));
+    public void insert(MailItem mail, String token, String userId) {
+        sendMailToServer(token, userId, mail);
+        // Do NOT insert into Room here; only after server response
     }
 
-    public void delete(MailItem mail) {
+    public void delete(MailItem mail, String token, String userId) {
+        deleteMailOnServer(token, userId, mail.id);
         executorService.execute(() -> mailDao.deleteMail(mail));
     }
 
-    public void update(MailItem mail) {
-        executorService.execute(() -> mailDao.updateMail(mail));
+    public void update(MailItem mail, String token, String userId) {
+        updateMailOnServer(token, userId, mail, success -> {
+            if (success) {
+                executorService.execute(() -> {
+                    mailDao.updateMail(mail);
+
+                    mail.setUserId(userId + " ");
+                    mail.setUserId(userId);
+
+                    mailDao.updateMail(mail);
+                });
+            }
+        });
     }
+
 
     public void deleteAll() {
         executorService.execute(mailDao::deleteAll);
@@ -102,30 +118,137 @@ public class MailRepository {
     // --- SERVER ---
 
     public LiveData<List<MailItem>> fetchMailsFromServer(String token, String userId) {
+        return fetchMailsFromServer(token, userId, null);
+    }
+
+    public LiveData<List<MailItem>> fetchMailsFromServer(String token, String userId, String sinceTimestamp) {
         MutableLiveData<List<MailItem>> mailLiveData = new MutableLiveData<>();
         executorService.execute(() -> {
             try {
-                URL url = new URL("http://10.0.2.2:8080/api/mails/");
+                String urlString = "http://10.0.2.2:8080/api/mails/";
+                if (sinceTimestamp != null) {
+                    urlString += "?since=" + sinceTimestamp;
+                }
+                URL url = new URL(urlString);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setRequestProperty("Authorization", "Bearer " + token);
                 conn.setRequestProperty("user-id", userId);
                 conn.setRequestMethod("GET");
+                conn.connect();
 
-                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                StringBuilder result = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    result.append(line);
+                int responseCode = conn.getResponseCode();
+                Log.d("MailRepository", "fetchMailsFromServer response code: " + responseCode);
+
+                if (responseCode == 200) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuilder result = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        result.append(line);
+                    }
+                    reader.close();
+
+                    Log.d("MailRepository", "fetchMailsFromServer response: " + result.toString());
+
+                    Type listType = new TypeToken<List<MailItem>>() {}.getType();
+                    List<MailItem> mails = gson.fromJson(result.toString(), listType);
+                    // Set userId for each mail and convert timestamp to time
+                    if (mails != null) {
+                        for (MailItem mail : mails) {
+                            mail.setUserId(userId);
+                            mail.convertTimestampToTime(); // Convert timestamp to time for proper sorting
+                        }
+                        Log.d("MailRepository", "fetchMailsFromServer fetched " + mails.size() + " mails");
+                    }
+                    mailLiveData.postValue(mails);
+                } else {
+                    Log.e("MailRepository", "fetchMailsFromServer failed with response code: " + responseCode);
+                    mailLiveData.postValue(null);
                 }
-                reader.close();
-
-                Type listType = new TypeToken<List<MailItem>>() {}.getType();
-                List<MailItem> mails = gson.fromJson(result.toString(), listType);
-                mailLiveData.postValue(mails);
 
             } catch (Exception e) {
                 Log.e("MailRepository", "fetchMailsFromServer error", e);
+                mailLiveData.postValue(null);
+            }
+        });
+        return mailLiveData;
+    }
+
+    // New method to fetch only new mails since last sync
+    public LiveData<List<MailItem>> fetchNewMailsFromServer(String token, String userId) {
+        MutableLiveData<List<MailItem>> mailLiveData = new MutableLiveData<>();
+        executorService.execute(() -> {
+            try {
+                // Get the most recent mail timestamp from local database
+                MailItem latestMail = mailDao.getLatestMail(userId);
+                String sinceTimestamp = null;
+                if (latestMail != null && latestMail.time != null) {
+                    // Convert local time format back to ISO timestamp for server
+                    try {
+                        java.text.SimpleDateFormat localFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+                        java.util.Date date = localFormat.parse(latestMail.time);
+                        java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault());
+                        sinceTimestamp = isoFormat.format(date);
+                    } catch (Exception e) {
+                        Log.e("MailRepository", "Error parsing timestamp", e);
+                    }
+                }
+                
+                // Fetch new mails from server
+                String urlString = "http://10.0.2.2:8080/api/mails/";
+                if (sinceTimestamp != null) {
+                    urlString += "?since=" + sinceTimestamp;
+                }
+                URL url = new URL(urlString);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("Authorization", "Bearer " + token);
+                conn.setRequestProperty("user-id", userId);
+                conn.setRequestMethod("GET");
+                conn.connect();
+
+                int responseCode = conn.getResponseCode();
+                Log.d("MailRepository", "fetchNewMailsFromServer response code: " + responseCode);
+
+                if (responseCode == 200) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuilder result = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        result.append(line);
+                    }
+                    reader.close();
+
+                    Type listType = new TypeToken<List<MailItem>>() {}.getType();
+                    List<MailItem> mails = gson.fromJson(result.toString(), listType);
+                    
+                    if (mails != null && !mails.isEmpty()) {
+                        // Set userId for each mail and convert timestamp to time
+                        for (MailItem mail : mails) {
+                            mail.setUserId(userId);
+                            mail.convertTimestampToTime();
+                        }
+                        
+                        // Insert new mails into local database
+                        for (MailItem mail : mails) {
+                            mailDao.insertMail(mail);
+                        }
+                        
+                        Log.d("MailRepository", "fetchNewMailsFromServer inserted " + mails.size() + " new mails");
+                        mailLiveData.postValue(mails);
+                    } else {
+                        Log.d("MailRepository", "fetchNewMailsFromServer no new mails found");
+                        mailLiveData.postValue(new ArrayList<>());
+                    }
+                } else {
+                    Log.e("MailRepository", "fetchNewMailsFromServer failed with response code: " + responseCode);
+                    mailLiveData.postValue(new ArrayList<>());
+                }
+
+            } catch (Exception e) {
+                Log.e("MailRepository", "fetchNewMailsFromServer error", e);
+                mailLiveData.postValue(new ArrayList<>());
             }
         });
         return mailLiveData;
@@ -140,32 +263,64 @@ public class MailRepository {
                 String json = gson.toJson(mail);
                 writeJson(conn, json);
 
-                if (conn.getResponseCode() != 200) {
-                    Log.e("MailRepository", "sendMail failed: " + conn.getResponseCode());
+                int responseCode = conn.getResponseCode();
+                if (responseCode == 200 || responseCode == 201) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuilder result = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        result.append(line);
+                    }
+                    reader.close();
+
+                    // Parse the mail returned from the server (if full mail is returned)
+                    try {
+                        MailItem serverMail = gson.fromJson(result.toString(), MailItem.class);
+                        executorService.execute(() -> mailDao.insertMail(serverMail));
+                    } catch (Exception e) {
+                        // If only an ID is returned, fallback to updating the ID of the local mail
+                        com.google.gson.JsonObject obj = gson.fromJson(result.toString(), com.google.gson.JsonObject.class);
+                        if (obj.has("id")) {
+                            String backendId = obj.get("id").getAsString();
+                            if (backendId != null && !backendId.isEmpty() && !backendId.equals("undefined")) {
+                                mail.id = backendId;
+                                executorService.execute(() -> mailDao.insertMail(mail));
+                            }
+                        }
+                    }
                 }
             } catch (Exception e) {
-                Log.e("MailRepository", "sendMail error", e);
+                // Handle error
             }
         });
     }
 
-    public void updateMailOnServer(String token, String userId, String mailId, MailItem updatedMail) {
+    public void updateMailOnServer(String token, String userId, MailItem mail, java.util.function.Consumer<Boolean> callback) {
         executorService.execute(() -> {
             try {
-                URL url = new URL("http://10.0.2.2:8080/api/mails/" + mailId);
-                HttpURLConnection conn = setupConnection(url, "PATCH", token, userId);
+                URL url = new URL("http://10.0.2.2:8080/api/mails/" + mail.id);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("PATCH");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("Authorization", "Bearer " + token);
+                conn.setRequestProperty("user-id", userId);
+                conn.setDoOutput(true);
 
-                String json = gson.toJson(updatedMail);
-                writeJson(conn, json);
+                String jsonBody = gson.toJson(mail);
+                OutputStream os = conn.getOutputStream();
+                os.write(jsonBody.getBytes());
+                os.flush();
+                os.close();
 
-                if (conn.getResponseCode() != 200) {
-                    Log.e("MailRepository", "updateMail failed: " + conn.getResponseCode());
-                }
+                int responseCode = conn.getResponseCode();
+                callback.accept(responseCode == 200);
             } catch (Exception e) {
-                Log.e("MailRepository", "updateMail error", e);
+                Log.e("UpdateMail", "Error updating mail", e);
+                callback.accept(false);
             }
         });
     }
+
 
     public void deleteMailOnServer(String token, String userId, String mailId) {
         executorService.execute(() -> {
@@ -255,6 +410,15 @@ public class MailRepository {
         });
     }
 
+    public LiveData<MailItem> getMailById(String mailId) {
+        MutableLiveData<MailItem> mailLiveData = new MutableLiveData<>();
+        executorService.execute(() -> {
+            MailItem mail = mailDao.getMailById(mailId);
+            mailLiveData.postValue(mail);
+        });
+        return mailLiveData;
+    }
+
     private HttpURLConnection setupConnection(URL url, String method, String token, String userId) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestProperty("Content-Type", "application/json");
@@ -271,4 +435,4 @@ public class MailRepository {
             os.write(input, 0, input.length);
         }
     }
-} 
+}

@@ -1,7 +1,7 @@
 import "../../components/MailRowsStyle/MailRowsStyle.css";
 import MailActionBar from "../../components/MailActionBar/MailActionBar";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { AiOutlineDelete } from "react-icons/ai";
 import MailStarButton from "../../components/MailStarButton/MailStarButton";
 import { useMails } from "../../hooks/useMails";
@@ -10,36 +10,12 @@ import { useMails } from "../../hooks/useMails";
 const StarredMail = () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
-  const [starredMails, setStarredMails] = useState([]);
   const [selectedMails, setSelectedMails] = useState([]);
   const [error,] = useState(null);
   const navigate = useNavigate();
+  const { starredMails, setStarredMails } = useOutletContext();
 
-  useEffect(() => {
-    fetch("http://localhost:8080/api/mails", {
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "user-id": userId
-      }
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch mails");
-        return res.json();
-      })
-      .then((data) => {
-        const filtered = data.filter(
-          (mail) =>
-            mail.isStarred === true &&
-            (mail.isDeleted === false || mail.isDeleted === undefined) 
-
-        );
-        setStarredMails(filtered);
-      })
-      .catch((err) => {
-        console.error(err);
-        
-      });
-  }, [token, userId]);
+  // No need to fetch data here - parent component handles it
 
   const { deleteSelectedMails, markSpam, toggleStar, handleDeleteMail } = useMails(token, userId, starredMails, setStarredMails);
   

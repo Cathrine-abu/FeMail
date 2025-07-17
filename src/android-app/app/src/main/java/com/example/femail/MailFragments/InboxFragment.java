@@ -38,16 +38,39 @@ public class InboxFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.mailListView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), "inbox", null, (mail, position) -> {
-            mailViewModel.update(mail);
+            mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
+            String token = AuthPrefs.getToken(requireContext());
+            String userId = AuthPrefs.getUserId(requireContext());
+            mailViewModel.updateMailOnServer(token, userId, mail, success -> {});            refreshMailsFromServer();
         });
         recyclerView.setAdapter(mailAdapter);
 
         mailViewModel = new ViewModelProvider(requireActivity()).get(MailViewModel.class);
+        
+        // Fetch fresh mails from server when fragment loads
+        refreshMailsFromServer();
+        
         mailViewModel.getInboxMails(AuthPrefs.getUserId(requireContext()))
             .observe(getViewLifecycleOwner(), mails -> {
+                for (MailItem mail : mails) {
+                    android.util.Log.d("MailDebug", "id=" + mail.id + ", time=" + mail.time + ", subject=" + mail.subject);
+                }
                 mailAdapter.setMailList(mails);
+                recyclerView.scrollToPosition(0);
             });
 
         return view;
+    }
+
+    private void refreshMailsFromServer() {
+        String token = AuthPrefs.getToken(requireContext());
+        String userId = AuthPrefs.getUserId(requireContext());
+        android.util.Log.d("InboxFragment", "refreshMailsFromServer called with token: " + (token != null ? "present" : "null") + ", userId: " + userId);
+        // Use incremental refresh instead of full refresh
+        mailViewModel.fetchNewMailsFromServer(token, userId).observe(getViewLifecycleOwner(), mails -> {
+            if (mails != null && !mails.isEmpty()) {
+                android.util.Log.d("InboxFragment", "Received " + mails.size() + " new mails from server");
+            }
+        });
     }
 }

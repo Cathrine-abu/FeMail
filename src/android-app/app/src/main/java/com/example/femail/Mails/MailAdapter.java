@@ -16,6 +16,8 @@ import com.example.femail.R;
 import com.example.femail.ViewMail;
 
 import java.util.List;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder> {
 
@@ -68,6 +70,18 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
     }
 
     public void setMailList(List<MailItem> mails) {
+        if (mails != null) {
+            // Sort mails by timestamp descending (newest first), nulls last
+            Collections.sort(mails, new Comparator<MailItem>() {
+                @Override
+                public int compare(MailItem m1, MailItem m2) {
+                    if (m1.time == null && m2.time == null) return 0;
+                    if (m1.time == null) return 1;  // nulls last
+                    if (m2.time == null) return -1; // nulls last
+                    return m2.time.compareTo(m1.time);
+                }
+            });
+        }
         this.mailList = mails;
         notifyDataSetChanged();
     }
@@ -93,7 +107,20 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
             holder.timeView.setText(mail.time); // fallback
         }
         holder.starView.setImageResource(mail.isStarred ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
-        holder.fromView.setText(mail.from);
+        
+        // Display sender/recipient information based on mail direction
+        if (mail.direction != null && mail.direction.contains("sent")) {
+            // For sent mails, show "To: [recipients]"
+            String recipients = "";
+            if (mail.to != null && !mail.to.isEmpty()) {
+                recipients = String.join(", ", mail.to);
+            }
+            holder.fromView.setText("To: " + recipients);
+        } else {
+            // For received mails, show "From: [sender]"
+            holder.fromView.setText("From: " + mail.from);
+        }
+        
         holder.bodyView.setText(mail.body);
 
         // Hide star icon if in trash

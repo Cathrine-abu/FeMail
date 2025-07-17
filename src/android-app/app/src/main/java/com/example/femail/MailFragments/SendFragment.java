@@ -37,16 +37,36 @@ public class SendFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), "sent", null, (mail, position) -> {
             // Update the mail in the database when star is clicked
-            mailViewModel.update(mail);
+            mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
+            String token = AuthPrefs.getToken(requireContext());
+            String userId = AuthPrefs.getUserId(requireContext());
+            mailViewModel.updateMailOnServer(token, userId, mail, success -> {});            mailViewModel.fetchMailsFromServer(token, userId);
+            refreshMailsFromServer();
         });
         recyclerView.setAdapter(mailAdapter);
 
         mailViewModel = new ViewModelProvider(requireActivity()).get(MailViewModel.class);
+        
+        // Fetch fresh mails from server when fragment loads
+        refreshMailsFromServer();
+        
         mailViewModel.getSentMails(AuthPrefs.getUserId(requireContext()))
             .observe(getViewLifecycleOwner(), mails -> {
                 mailAdapter.setMailList(mails);
+                //RecyclerView recyclerView = view.findViewById(R.id.mailListView);
+                recyclerView.scrollToPosition(0);
             });
 
         return view;
+    }
+
+    private void refreshMailsFromServer() {
+        String token = AuthPrefs.getToken(requireContext());
+        String userId = AuthPrefs.getUserId(requireContext());
+        mailViewModel.fetchMailsFromServer(token, userId).observe(getViewLifecycleOwner(), mails -> {
+            for (MailItem mail : mails) {
+                mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
+            }
+        });
     }
 }

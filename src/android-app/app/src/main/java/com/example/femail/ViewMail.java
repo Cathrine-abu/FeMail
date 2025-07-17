@@ -50,6 +50,7 @@ public class ViewMail extends AppCompatActivity {
         mailViewModel = new ViewModelProvider(this).get(MailViewModel.class);
         
         // Create current mail object for operations
+        String userId = AuthPrefs.getUserId(this);
         currentMail = new MailItem(
             mailId,
             subject,
@@ -63,21 +64,18 @@ public class ViewMail extends AppCompatActivity {
             false, // isDraft
             getIntent().getBooleanExtra("isDeleted", false), // isDeleted
             direction != null ? direction : java.util.List.of("inbox"),
-            "current_user",
-            "current_user",
+            userId, // user
+            userId, // owner
             null,
             "inbox",
             false,
-            AuthPrefs.getUserId(this) // userId
+            userId // userId
         );
         TextView detailFrom = findViewById(R.id.detail_from);
         TextView detailTo = findViewById(R.id.detail_to);
         TextView detailDate = findViewById(R.id.detail_date);
 
-        detailFrom.setText("From: " + from);
-        detailTo.setText("To: " + to);
-        detailDate.setText("Date: " + time);
-
+        // Initialize views
         TextView subjectView = findViewById(R.id.view_mail_subject);
         TextView timeView = findViewById(R.id.view_mail_time);
         TextView bodyView = findViewById(R.id.view_mail_body);
@@ -87,10 +85,28 @@ public class ViewMail extends AppCompatActivity {
         ImageView backButton = findViewById(R.id.back_button);
         ImageView trashButton = findViewById(R.id.trash_button);
 
-        subjectView.setText(subject);
-        timeView.setText(time);
-        bodyView.setText(body);
-        fromView.setText("From: " + from);
+        // Display sender/recipient information based on mail direction
+        if (direction != null && direction.contains("sent")) {
+            // For sent mails, show "To: [recipients]" in the main view
+            detailFrom.setText("From: " + from);
+            detailTo.setText("To: " + to);
+            detailDate.setText("Date: " + time);
+            
+            subjectView.setText(subject);
+            timeView.setText(time);
+            bodyView.setText(body);
+            fromView.setText("To: " + to);
+        } else {
+            // For received mails, show "From: [sender]" in the main view
+            detailFrom.setText("From: " + from);
+            detailTo.setText("To: " + to);
+            detailDate.setText("Date: " + time);
+            
+            subjectView.setText(subject);
+            timeView.setText(time);
+            bodyView.setText(body);
+            fromView.setText("From: " + from);
+        }
 
         final boolean[] isStarred = { getIntent().getBooleanExtra("starred", false) };
 
@@ -110,19 +126,28 @@ public class ViewMail extends AppCompatActivity {
             starView.setImageResource(isStarred[0] ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
             // Update the mail in database
             currentMail.isStarred = isStarred[0];
-            mailViewModel.update(currentMail);
+            mailViewModel.update(currentMail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+            String token = AuthPrefs.getToken(this);
+            //String userId = AuthPrefs.getUserId(this);
+            mailViewModel.updateMailOnServer(token, userId, currentMail, success -> {});
+            mailViewModel.fetchMailsFromServer(token, userId);
         });
         backButton.setOnClickListener(v -> finish());
         trashButton.setOnClickListener(v -> {
             if (currentMail.isDeleted || (currentMail.direction != null && currentMail.direction.contains("trash"))) {
                 // Permanently delete
-                mailViewModel.delete(currentMail);
+                mailViewModel.delete(currentMail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
                 Toast.makeText(this, "Mail deleted forever", Toast.LENGTH_SHORT).show();
             } else {
                 // Move to trash
                 currentMail.isDeleted = true;
                 currentMail.direction = java.util.List.of("trash");
-                mailViewModel.update(currentMail);
+                currentMail.owner = userId;
+                currentMail.user = userId;
+                mailViewModel.update(currentMail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+                String token = AuthPrefs.getToken(this);
+                mailViewModel.updateMailOnServer(token, userId, currentMail, success -> {});
+                mailViewModel.fetchMailsFromServer(token, userId);
                 Toast.makeText(this, "Moved to trash", Toast.LENGTH_SHORT).show();
             }
             finish();
@@ -162,7 +187,7 @@ public class ViewMail extends AppCompatActivity {
                     return true;
                 } else if (id == R.id.action_spam) {
                     String token = AuthPrefs.getToken(this);
-                    String userId = AuthPrefs.getUserId(this);
+                    //String userId = AuthPrefs.getUserId(this);
                     if (currentMail.isSpam) {
                         // Unspam
                         currentMail.isSpam = false;
@@ -171,20 +196,15 @@ public class ViewMail extends AppCompatActivity {
                         } else {
                             currentMail.direction = java.util.List.of("inbox");
                         }
-                        mailViewModel.update(currentMail);
-                        mailViewModel.unmarkMailAsSpamOnServer(token, userId, currentMail.id);
-                        Toast.makeText(this, "Mail moved out of spam", Toast.LENGTH_SHORT).show();
-                        finish();
                     } else {
                         // Mark as spam
                         currentMail.isSpam = true;
                         currentMail.previousDirection = currentMail.direction;
                         currentMail.direction = java.util.List.of("spam");
-                        mailViewModel.update(currentMail);
-                        mailViewModel.markMailAsSpamOnServer(token, userId, currentMail.id);
-                        Toast.makeText(this, "Marked as spam", Toast.LENGTH_SHORT).show();
-                        finish();
                     }
+                    mailViewModel.updateMailOnServer(token, AuthPrefs.getUserId(this), currentMail,success -> {});
+                    mailViewModel.fetchMailsFromServer(token, AuthPrefs.getUserId(this));
+                    finish();
                     return true;
                 } else if (id == R.id.action_label) {
                     // Show label selection dialog
@@ -239,11 +259,15 @@ public class ViewMail extends AppCompatActivity {
     }
 
     private void moveMailToCategory(MailItem mail, String category) {
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
         if (category.equalsIgnoreCase("Primary")) {
             mail.category = "primary";
             mail.direction = new ArrayList<>(Arrays.asList("inbox", "primary"));
             mail.isDeleted = false;
-            mailViewModel.update(mail);
+            mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+            mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
+            mailViewModel.fetchMailsFromServer(token, userId);
             Toast.makeText(this, "Mail moved to Primary (Inbox)", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -261,7 +285,38 @@ public class ViewMail extends AppCompatActivity {
         }
         // Remove from trash
         mail.isDeleted = false;
-        mailViewModel.update(mail);
+        mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+        mailViewModel.updateMailOnServer(token, userId, mail,success -> {});
+        mailViewModel.fetchMailsFromServer(token, userId);
         Toast.makeText(this, "Mail moved to " + category, Toast.LENGTH_SHORT).show();
+        refreshMailsFromServer();
+    }
+
+    private void refreshMailsFromServer() {
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
+        mailViewModel.fetchMailsFromServer(token, userId).observe(this, mails -> {
+            for (MailItem mail : mails) {
+                mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+            }
+        });
+    }
+
+    private void moveMailToTrash(MailItem mail) {
+        mail.isDeleted = true;
+        mail.category = "Trash";
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
+        mailViewModel.updateMailOnServerWithRoom(token, userId, mail);
+        mailViewModel.fetchMailsFromServer(token, userId);
+    }
+
+    private void markMailAsSpam(MailItem mail) {
+        mail.isSpam = true;
+        mail.category = "Spam";
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
+        mailViewModel.updateMailOnServerWithRoom(token, userId, mail);
+        mailViewModel.fetchMailsFromServer(token, userId);
     }
 }
