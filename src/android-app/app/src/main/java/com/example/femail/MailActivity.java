@@ -370,7 +370,7 @@ public class MailActivity extends AppCompatActivity {
             }
             Toast.makeText(this, "Saved as draft", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
-            refreshMailsFromServer();
+            //refreshMailsFromServer();
         });
 
         // Send button - save as sent mail
@@ -436,7 +436,7 @@ public class MailActivity extends AppCompatActivity {
             }
             Toast.makeText(this, "Mail sent", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
-            refreshMailsFromServer();
+            //refreshMailsFromServer();
         });
         dialog.show();
     }
@@ -512,7 +512,7 @@ public class MailActivity extends AppCompatActivity {
                 labelViewModel.sendLabelToServer(this, token, userId, newLabel);
             }
             dialog.dismiss();
-            refreshMailsFromServer();
+            //refreshMailsFromServer();
         });
 
         dialog.show();
@@ -616,7 +616,7 @@ public class MailActivity extends AppCompatActivity {
         mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
         mailViewModel.fetchMailsFromServer(token, userId);
         Toast.makeText(this, "Mail moved to " + category, Toast.LENGTH_SHORT).show();
-        refreshMailsFromServer();
+        //refreshMailsFromServer();
     }
 
     private void triggerSearch() {

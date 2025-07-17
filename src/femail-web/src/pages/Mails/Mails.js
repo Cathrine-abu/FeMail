@@ -126,13 +126,31 @@ const Mail = () => {
           return a.id.localeCompare(b.id);
         });
 
-        // Update all states
-        setInboxMails(inbox);
-        setSendMails(sent);
-        setDraftMails(drafts);
-        setSpamMails(spam);
-        setStarredMails(starred);
-        setTrashMails(trash);
+        // Merge fetched mails with current state to preserve optimistic mails
+        setInboxMails(prev => {
+          const prevNotInFetch = prev.filter(pm => !inbox.some(sm => sm.id === pm.id));
+          return [...prevNotInFetch, ...inbox].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        });
+        setSendMails(prev => {
+          const prevNotInFetch = prev.filter(pm => !sent.some(sm => sm.id === pm.id));
+          return [...prevNotInFetch, ...sent].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        });
+        setDraftMails(prev => {
+          const prevNotInFetch = prev.filter(pm => !drafts.some(sm => sm.id === pm.id));
+          return [...prevNotInFetch, ...drafts].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        });
+        setSpamMails(prev => {
+          const prevNotInFetch = prev.filter(pm => !spam.some(sm => sm.id === pm.id));
+          return [...prevNotInFetch, ...spam].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        });
+        setStarredMails(prev => {
+          const prevNotInFetch = prev.filter(pm => !starred.some(sm => sm.id === pm.id));
+          return [...prevNotInFetch, ...starred].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        });
+        setTrashMails(prev => {
+          const prevNotInFetch = prev.filter(pm => !trash.some(sm => sm.id === pm.id));
+          return [...prevNotInFetch, ...trash].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        });
       })
       .catch((err) => {
         console.error("Error fetching mails:", err);
@@ -141,10 +159,10 @@ const Mail = () => {
 
   useEffect(() => {
     fetchAllMails();
-    // Refresh every 2 seconds for near real-time updates
+    // Refresh every 1 seconds for near real-time updates
     const interval = setInterval(() => {
       fetchAllMails();
-    }, 2000);
+    }, 10);
     return () => {
       clearInterval(interval);
     };
