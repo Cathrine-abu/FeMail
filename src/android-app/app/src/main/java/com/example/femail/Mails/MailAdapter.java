@@ -108,6 +108,14 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
         }
         holder.starView.setImageResource(mail.isStarred ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
         
+        // Show spam icon in Sent folder if mail is spam
+        ImageView spamView = holder.itemView.findViewById(R.id.item_mail_spam);
+        if ("sent".equals(sourceFragment) && mail.isSpam) {
+            spamView.setVisibility(View.VISIBLE);
+        } else {
+            spamView.setVisibility(View.GONE);
+        }
+        
         // Display sender/recipient information based on mail direction
         if (mail.direction != null && mail.direction.contains("sent")) {
             // For sent mails, show "To: [recipients]"

@@ -86,8 +86,8 @@ public class MailRepository {
     }
 
     public void insert(MailItem mail, String token, String userId) {
+        // Only insert after server response to avoid duplicates
         sendMailToServer(token, userId, mail);
-        // Do NOT insert into Room here; only after server response
     }
 
     public void delete(MailItem mail, String token, String userId) {
@@ -100,10 +100,8 @@ public class MailRepository {
             if (success) {
                 executorService.execute(() -> {
                     mailDao.updateMail(mail);
-
                     mail.setUserId(userId + " ");
                     mail.setUserId(userId);
-
                     mailDao.updateMail(mail);
                 });
             }

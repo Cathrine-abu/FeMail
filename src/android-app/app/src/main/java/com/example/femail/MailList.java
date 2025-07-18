@@ -53,25 +53,25 @@ public class MailList extends AppCompatActivity {
                 .build();
 
         MailDao mailDao = db.mailDao();
-//        if (mailDao.getInboxMails().isEmpty()) {
-//            mailDao.insertMail(new MailItem("wow", "4444", new Date(), "inbox", "testUserId"));
-//            mailDao.insertMail(new MailItem("wow", "hhhh", new Date(), "inbox", "testUserId"));
-//            mailDao.insertMail(new MailItem("wow", "88888", new Date(), "inbox", "testUserId"));
-//            mailDao.insertMail(new MailItem("wow", "hh444478hh", new Date(), "inbox", "testUserId"));
-//
-//        }
+
         switch (category) {
             case "inbox":
-                mailItems = mailDao.getInboxMails(AuthPrefs.getUserId(this));
+                mailDao.getInboxMailsLive(AuthPrefs.getUserId(this)).observe(this, mails -> {
+                    mailItems = mails;
+                });
                 break;
             case "spam":
-                mailItems = mailDao.getSpamMails(AuthPrefs.getUserId(this));
+                mailDao.getSpamMailsLive(AuthPrefs.getUserId(this)).observe(this, mails -> {
+                    mailItems = mails;
+                });
                 break;
             case "sent":
-                mailItems = mailDao.getSentMails(AuthPrefs.getUserId(this));
+                mailDao.getSentMailsLive(AuthPrefs.getUserId(this)).observe(this, mails -> {
+                    mailItems = mails;
+                });
                 break;
             default:
-                mailItems = mailDao.getInboxMails(AuthPrefs.getUserId(this));
+                break;
         }
     }
 

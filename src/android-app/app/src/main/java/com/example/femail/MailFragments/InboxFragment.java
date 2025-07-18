@@ -19,11 +19,16 @@ import com.example.femail.AuthPrefs;
 
 import java.util.ArrayList;
 import java.util.List;
+import android.view.ActionMode;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
 public class InboxFragment extends Fragment {
 
     private MailViewModel mailViewModel;
     private MailAdapter mailAdapter;
+    private ActionMode actionMode;
 
     public InboxFragment() {}
 
@@ -59,6 +64,18 @@ public class InboxFragment extends Fragment {
                 recyclerView.scrollToPosition(0);
             });
 
+        mailAdapter.setSelectionListener((enabled, selectedCount) -> {
+            if (enabled && actionMode == null) {
+                actionMode = requireActivity().startActionMode(actionModeCallback);
+            }
+            if (actionMode != null) {
+                actionMode.setTitle(String.valueOf(selectedCount));
+                if (!enabled) {
+                    actionMode.finish();
+                }
+            }
+        });
+
         return view;
     }
 
@@ -73,4 +90,49 @@ public class InboxFragment extends Fragment {
             }
         });
     }
+
+    private final ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            MenuInflater inflater = mode.getMenuInflater();
+            inflater.inflate(R.menu.mail_context_menu, menu);
+            return true;
+        }
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            int count = mailAdapter.getSelectedMails().size();
+            mode.setTitle(String.valueOf(count));
+            return false;
+        }
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            List<com.example.femail.Mails.MailItem> selected = mailAdapter.getSelectedMails();
+            if (item.getItemId() == R.id.action_delete) {
+                for (com.example.femail.Mails.MailItem mail : selected) {
+                    mail.isDeleted = true;
+                    mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
+                    mailViewModel.updateMailOnServer(AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()), mail, success -> {});
+                }
+                mailAdapter.clearSelection();
+                mode.finish();
+                return true;
+            } else if (item.getItemId() == R.id.action_spam) {
+                for (com.example.femail.Mails.MailItem mail : selected) {
+                    mail.isSpam = true;
+                    mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
+                    mailViewModel.updateMailOnServer(AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()), mail, success -> {});
+                }
+                mailAdapter.clearSelection();
+                refreshMailsFromServer();
+                mode.finish();
+                return true;
+            }
+            return false;
+        }
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            mailAdapter.clearSelection();
+            actionMode = null;
+        }
+    };
 }

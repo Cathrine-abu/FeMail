@@ -23,9 +23,6 @@ public interface MailDao {
     @androidx.room.Update
     void updateMail(MailItem mail);
 
-    @Query("SELECT * FROM mails WHERE userId = :userId AND [from] != 'me' AND isRead = 0")
-    List<MailItem> getInboxMails(String userId);
-
     @Query("SELECT * FROM mails WHERE userId = :userId AND [from] != 'me' AND subject LIKE '%win%'")
     List<MailItem> getSpamMails(String userId);
 
@@ -33,7 +30,7 @@ public interface MailDao {
     List<MailItem> getSentMails(String userId);
 
     // New specific queries for better performance
-    @Query("SELECT * FROM mails WHERE userId = :userId AND (direction LIKE '%inbox%' OR direction LIKE '%received%') AND isDeleted = 0 ORDER BY time DESC")
+    @Query("SELECT * FROM mails WHERE userId = :userId AND (direction LIKE '%inbox%' OR direction LIKE '%received%') AND isDeleted = 0 AND isSpam = 0 ORDER BY time DESC")
     LiveData<List<MailItem>> getInboxMailsLive(String userId);
     
     @Query("SELECT * FROM mails WHERE userId = :userId AND direction LIKE '%sent%' AND isDeleted = 0 ORDER BY time DESC")

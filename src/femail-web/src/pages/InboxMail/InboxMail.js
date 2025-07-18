@@ -3,10 +3,11 @@ import MailActionBar from "../../components/MailActionBar/MailActionBar";
 import MailListTab from "./MailListTab";
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { AiOutlineDelete } from "react-icons/ai";
+import { AiOutlineDelete, AiOutlineStop, AiOutlineClose } from "react-icons/ai";
 import MailStarButton from "../../components/MailStarButton/MailStarButton";
 import { useMails } from "../../hooks/useMails";
 import EditMail from "../../popUps/EditMail/EditMail";
+import Topbar from "../Topbar/Topbar";
 
 
 const InboxMail = () => {
@@ -87,6 +88,29 @@ const InboxMail = () => {
     }
   };
 
+  const handleMoveToTrash = (mailIds) => {
+    mailIds.forEach(id => {
+      fetch(`http://localhost:8080/api/mails/${id}`, {
+        method: "PATCH",
+        headers: { "user-id": userId, "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ isDeleted: true }),
+      });
+    });
+    setInboxMails(prev => prev.filter(mail => !mailIds.includes(mail.id)));
+    setSelectedMails([]);
+  };
+
+  const handleMoveToSpam = (mailIds) => {
+    mailIds.forEach(id => {
+      fetch(`http://localhost:8080/api/mails/${id}`, {
+        method: "PATCH",
+        headers: { "user-id": userId, "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ isSpam: true, direction: ["spam"] }),
+      });
+    });
+    setInboxMails(prev => prev.filter(mail => !mailIds.includes(mail.id)));
+    setSelectedMails([]);
+  };
 
   const handleCheckboxChange = (e, id) => {
     e.stopPropagation();
@@ -99,15 +123,26 @@ const InboxMail = () => {
   
   return (
     <div className="inbox-container">
+      {selectedMails.length > 0 && (
+        <div className="contextual-action-bar" style={{
+          display: "flex", alignItems: "center", background: "#f1f3f4", padding: "10px 20px", borderBottom: "1px solid #ccc", position: "sticky", top: 0, zIndex: 100
+        }}>
+          <span style={{marginRight: 16, fontWeight: 600}}>{selectedMails.length}</span>
+          <button onClick={() => handleMoveToTrash(selectedMails)} title="Trash" style={{background: "none", border: "none", fontSize: 22, marginRight: 12, cursor: "pointer"}}>
+            <AiOutlineDelete />
+          </button>
+          <button onClick={() => handleMoveToSpam(selectedMails)} title="Spam" style={{background: "none", border: "none", fontSize: 22, marginRight: 12, cursor: "pointer"}}>
+            <AiOutlineStop />
+          </button>
+          <button onClick={() => setSelectedMails([])} title="Cancel" style={{background: "none", border: "none", fontSize: 22, marginRight: 12, cursor: "pointer"}}>
+            <AiOutlineClose />
+          </button>
+        </div>
+      )}
+      <div className="inbox-header-bar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <h2 style={{ margin: 0 }}>Inbox</h2>
+      </div>
       <MailListTab onTabSelect={setSelectedTab} />
-
-      <MailActionBar
-        selected={selectedMails}
-        onDelete={handleDeleteSelected}
-        onMarkSpam={handleMarkSpam}
-        onClear={() => setSelectedMails([])}
-        onMoveTo={handleMoveToLabel}
-      />
 
       {error && <p className="error">{error}</p>}
       {filteredInboxMails.length === 0 && !error && <p>No messages.</p>}
@@ -125,7 +160,6 @@ const InboxMail = () => {
               onChange={(e) => handleCheckboxChange(e, mail.id)}
               title="select"
             />
-
             <MailStarButton
               isStarred={mail.isStarred}
               onClick={(e) => handleStarredMail(e, mail, setInboxMails)}

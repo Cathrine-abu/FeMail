@@ -17,5 +17,6 @@
     <color name="dark_surface">#121212</color>
     <color name="light_grey">#98989B</color>
     <color name="light_accent">#9C6AFA</color>
+    <color name="light_purple">#E1BEE7</color>
 
 </resources>

@@ -5,6 +5,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.view.ActionMode;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import java.util.List;
 
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -23,6 +28,7 @@ public class SendFragment extends Fragment {
 
     private MailViewModel mailViewModel;
     private MailAdapter mailAdapter;
+    private ActionMode actionMode;
 
     public SendFragment() {}
 
@@ -36,7 +42,6 @@ public class SendFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.mailListView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mailAdapter = new MailAdapter(getContext(), new ArrayList<>(), "sent", null, (mail, position) -> {
-            // Update the mail in the database when star is clicked
             mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
             String token = AuthPrefs.getToken(requireContext());
             String userId = AuthPrefs.getUserId(requireContext());
@@ -44,6 +49,18 @@ public class SendFragment extends Fragment {
             refreshMailsFromServer();
         });
         recyclerView.setAdapter(mailAdapter);
+
+        mailAdapter.setSelectionListener((enabled, selectedCount) -> {
+            if (enabled && actionMode == null) {
+                actionMode = requireActivity().startActionMode(actionModeCallback);
+            }
+            if (actionMode != null) {
+                actionMode.setTitle(String.valueOf(selectedCount));
+                if (!enabled) {
+                    actionMode.finish();
+                }
+            }
+        });
 
         mailViewModel = new ViewModelProvider(requireActivity()).get(MailViewModel.class);
         
@@ -69,4 +86,49 @@ public class SendFragment extends Fragment {
             }
         });
     }
+
+    private final ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            MenuInflater inflater = mode.getMenuInflater();
+            inflater.inflate(R.menu.mail_context_menu, menu);
+            return true;
+        }
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            int count = mailAdapter.getSelectedMails().size();
+            mode.setTitle(String.valueOf(count));
+            return false;
+        }
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            List<com.example.femail.Mails.MailItem> selected = mailAdapter.getSelectedMails();
+            if (item.getItemId() == R.id.action_delete) {
+                for (com.example.femail.Mails.MailItem mail : selected) {
+                    mail.isDeleted = true;
+                    mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
+                    mailViewModel.updateMailOnServer(AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()), mail, success -> {});
+                }
+                mailAdapter.clearSelection();
+                mode.finish();
+                return true;
+            } else if (item.getItemId() == R.id.action_spam) {
+                for (com.example.femail.Mails.MailItem mail : selected) {
+                    mail.isSpam = true;
+                    mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
+                    mailViewModel.updateMailOnServer(AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()), mail, success -> {});
+                }
+                mailAdapter.clearSelection();
+                refreshMailsFromServer();
+                mode.finish();
+                return true;
+            }
+            return false;
+        }
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            mailAdapter.clearSelection();
+            actionMode = null;
+        }
+    };
 }

@@ -26,6 +26,9 @@
 
         <!-- Toolbar title color -->
         <item name="android:textColorPrimary">@color/black</item>
+
+        <!-- Custom ActionMode style -->
+        <item name="actionModeStyle">@style/MyActionModeStyle</item>
     </style>
 
     <style name="Theme.FeMail" parent="Base.Theme.FeMail" />
