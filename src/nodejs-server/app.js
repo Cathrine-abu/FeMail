@@ -6,7 +6,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 const PORT = 8080;
-const MONGO_URI = "mongodb://mongo-container:27017/femail-db";
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo-container:27017/femail-db';
 
 // MongoDB Connection
 mongoose.connect(MONGO_URI, {
