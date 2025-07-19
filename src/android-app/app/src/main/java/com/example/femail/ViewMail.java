@@ -187,7 +187,6 @@ public class ViewMail extends AppCompatActivity {
                     return true;
                 } else if (id == R.id.action_spam) {
                     String token = AuthPrefs.getToken(this);
-                    //String userId = AuthPrefs.getUserId(this);
                     if (currentMail.isSpam) {
                         // Unspam
                         currentMail.isSpam = false;
@@ -199,10 +198,14 @@ public class ViewMail extends AppCompatActivity {
                     } else {
                         // Mark as spam
                         currentMail.isSpam = true;
-                        currentMail.previousDirection = currentMail.direction;
+                        // Save current direction as previousDirection before marking as spam
+                        if (currentMail.direction != null && !currentMail.direction.isEmpty()) {
+                            currentMail.previousDirection = new java.util.ArrayList<>(currentMail.direction);
+                        }
                         currentMail.direction = java.util.List.of("spam");
                     }
-                    mailViewModel.updateMailOnServer(token, AuthPrefs.getUserId(this), currentMail,success -> {});
+                    mailViewModel.update(currentMail, token, AuthPrefs.getUserId(this));
+                    mailViewModel.updateMailOnServer(token, AuthPrefs.getUserId(this), currentMail, success -> {});
                     mailViewModel.fetchMailsFromServer(token, AuthPrefs.getUserId(this));
                     finish();
                     return true;

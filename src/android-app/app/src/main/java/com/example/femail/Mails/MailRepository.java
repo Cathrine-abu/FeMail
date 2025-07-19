@@ -18,8 +18,10 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 
 public class MailRepository {
 
@@ -46,6 +48,7 @@ public class MailRepository {
     }
 
     public LiveData<List<MailItem>> getDraftMails(String userId) {
+        android.util.Log.d("MailRepository", "Getting draft mails for userId: " + userId);
         return mailDao.getDraftMailsLive(userId);
     }
 
@@ -86,7 +89,13 @@ public class MailRepository {
     }
 
     public void insert(MailItem mail, String token, String userId) {
-        // Only insert after server response to avoid duplicates
+        // Save to local database immediately for instant UI feedback
+        executorService.execute(() -> {
+            mail.setUserId(userId);
+            android.util.Log.d("MailRepository", "Inserting draft to local DB: id=" + mail.id + ", subject=" + mail.subject + ", isDraft=" + mail.isDraft + ", direction=" + mail.direction);
+            mailDao.insertMail(mail);
+        });
+        // Also send to server
         sendMailToServer(token, userId, mail);
     }
 
@@ -158,6 +167,20 @@ public class MailRepository {
                             mail.convertTimestampToTime(); // Convert timestamp to time for proper sorting
                         }
                         Log.d("MailRepository", "fetchMailsFromServer fetched " + mails.size() + " mails");
+                        List<MailItem> allLocalMails = mailDao.getAllMails(userId).getValue();
+                        for (MailItem serverMail : mails) {
+                            // Delete any temp mail with matching subject/body
+                            if (allLocalMails != null) {
+                                for (MailItem localMail : allLocalMails) {
+                                    if (localMail.id.startsWith("temp-")
+                                        && localMail.subject.equals(serverMail.subject)
+                                        && localMail.body.equals(serverMail.body)) {
+                                        mailDao.deleteMail(localMail);
+                                    }
+                                }
+                            }
+                            mailDao.insertMail(serverMail);
+                        }
                     }
                     mailLiveData.postValue(mails);
                 } else {
@@ -271,24 +294,95 @@ public class MailRepository {
                     }
                     reader.close();
 
-                    // Parse the mail returned from the server (if full mail is returned)
+                    // Parse the response from the server
                     try {
+                        // Try to parse as full mail object first
                         MailItem serverMail = gson.fromJson(result.toString(), MailItem.class);
-                        executorService.execute(() -> mailDao.insertMail(serverMail));
-                    } catch (Exception e) {
-                        // If only an ID is returned, fallback to updating the ID of the local mail
-                        com.google.gson.JsonObject obj = gson.fromJson(result.toString(), com.google.gson.JsonObject.class);
-                        if (obj.has("id")) {
-                            String backendId = obj.get("id").getAsString();
-                            if (backendId != null && !backendId.isEmpty() && !backendId.equals("undefined")) {
-                                mail.id = backendId;
-                                executorService.execute(() -> mailDao.insertMail(mail));
+                        if (serverMail != null && serverMail.id != null) {
+                            executorService.execute(() -> {
+                                // Delete the temp mail first
+                                if (mail.id.startsWith("temp-")) {
+                                    mailDao.deleteMail(mail);
+                                }
+                                
+                                // Convert timestamp to time format and insert the server mail with full data
+                                serverMail.setUserId(userId);
+                                serverMail.convertTimestampToTime();
+                                mailDao.insertMail(serverMail);
+                                
+                                android.util.Log.d("MailRepository", "Successfully replaced temp mail with backend mail: id=" + serverMail.id + ", subject=" + serverMail.subject + ", isDraft=" + serverMail.isDraft);
+                                
+                                // Debug: Check what's in the database after insertion
+                                List<MailItem> allMails = mailDao.getAllMailsDebug(userId);
+                                android.util.Log.d("MailRepository", "After server mail insertion - total mails: " + (allMails != null ? allMails.size() : 0));
+                                if (allMails != null) {
+                                    for (MailItem dbMail : allMails) {
+                                        if (dbMail.id.equals(serverMail.id)) {
+                                            android.util.Log.d("MailRepository", "Found server mail in DB: id=" + dbMail.id + ", isDraft=" + dbMail.isDraft + ", direction=" + dbMail.direction + ", userId=" + dbMail.userId);
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                // Debug: Check drafts specifically
+                                List<MailItem> drafts = mailDao.getDraftsDebug(userId);
+                                android.util.Log.d("MailRepository", "Drafts after server mail insertion: " + (drafts != null ? drafts.size() : 0));
+                                if (drafts != null) {
+                                    for (MailItem draft : drafts) {
+                                        android.util.Log.d("MailRepository", "Draft: id=" + draft.id + ", isDraft=" + draft.isDraft + ", direction=" + draft.direction);
+                                    }
+                                }
+                            });
+                        } else {
+                            // Fallback to ID-only response
+                            com.google.gson.JsonObject obj = gson.fromJson(result.toString(), com.google.gson.JsonObject.class);
+                            if (obj.has("id")) {
+                                String backendId = obj.get("id").getAsString();
+                                if (backendId != null && !backendId.isEmpty() && !backendId.equals("undefined")) {
+                                    executorService.execute(() -> {
+                                        // Delete the temp mail first
+                                        if (mail.id.startsWith("temp-")) {
+                                            mailDao.deleteMail(mail);
+                                        }
+                                        
+                                        // Update the mail with the backend ID and insert it
+                                        mail.id = backendId;
+                                        mail.setUserId(userId);
+                                        mail.convertTimestampToTime(); // Convert timestamp to time format
+                                        mailDao.insertMail(mail);
+                                        
+                                        android.util.Log.d("MailRepository", "Successfully replaced temp mail with backend mail: id=" + mail.id + ", subject=" + mail.subject + ", isDraft=" + mail.isDraft);
+                                        
+                                        // Debug: Check what's in the database after insertion
+                                        List<MailItem> allMails = mailDao.getAllMailsDebug(userId);
+                                        android.util.Log.d("MailRepository", "After fallback insertion - total mails: " + (allMails != null ? allMails.size() : 0));
+                                        if (allMails != null) {
+                                            for (MailItem dbMail : allMails) {
+                                                if (dbMail.id.equals(mail.id)) {
+                                                    android.util.Log.d("MailRepository", "Found fallback mail in DB: id=" + dbMail.id + ", isDraft=" + dbMail.isDraft + ", direction=" + dbMail.direction + ", userId=" + dbMail.userId);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Debug: Check drafts specifically
+                                        List<MailItem> drafts = mailDao.getDraftsDebug(userId);
+                                        android.util.Log.d("MailRepository", "Drafts after fallback insertion: " + (drafts != null ? drafts.size() : 0));
+                                        if (drafts != null) {
+                                            for (MailItem draft : drafts) {
+                                                android.util.Log.d("MailRepository", "Draft: id=" + draft.id + ", isDraft=" + draft.isDraft + ", direction=" + draft.direction);
+                                            }
+                                        }
+                                    });
+                                }
                             }
                         }
+                    } catch (Exception e) {
+                        android.util.Log.e("MailRepository", "Error parsing server response", e);
                     }
                 }
             } catch (Exception e) {
-                // Handle error
+                android.util.Log.e("MailRepository", "Error sending mail to server", e);
             }
         });
     }
@@ -311,6 +405,31 @@ public class MailRepository {
                 os.close();
 
                 int responseCode = conn.getResponseCode();
+                if (responseCode == 200) {
+                    // Try to read the response to get the updated mail object
+                    try {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                        StringBuilder result = new StringBuilder();
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            result.append(line);
+                        }
+                        reader.close();
+
+                        // Try to parse as full mail object
+                        MailItem updatedMail = gson.fromJson(result.toString(), MailItem.class);
+                        if (updatedMail != null && updatedMail.id != null) {
+                            executorService.execute(() -> {
+                                updatedMail.setUserId(userId);
+                                updatedMail.convertTimestampToTime(); // Convert timestamp to time format
+                                mailDao.insertMail(updatedMail); // This will update the existing mail
+                                android.util.Log.d("MailRepository", "Successfully updated mail from server: id=" + updatedMail.id + ", subject=" + updatedMail.subject);
+                            });
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.e("MailRepository", "Error parsing PATCH response", e);
+                    }
+                }
                 callback.accept(responseCode == 200);
             } catch (Exception e) {
                 Log.e("UpdateMail", "Error updating mail", e);
@@ -353,21 +472,31 @@ public class MailRepository {
             }
         });
     }
+    private List<String> extractUrls(String text) {
+        List<String> urls = new ArrayList<>();
+        Pattern pattern = Pattern.compile("(https?:\\/\\/[^\\s]+)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(text);
+        while (matcher.find()) {
+            urls.add(matcher.group());
+        }
+        return urls;
+    }
 
-    public void markMailAsSpam(String token, String userId, String mailId) {
+    public void markMailAsSpam(String token, String userId, MailItem mail) {
         executorService.execute(() -> {
             try {
-                URL url = new URL("http://10.0.2.2:8080/api/mails/" + mailId);
+                mail.isSpam = true;
+                mail.isDeleted = false;
+                URL url = new URL("http://10.0.2.2:8080/api/mails/" + mail.id);
                 HttpURLConnection conn = setupConnection(url, "PATCH", token, userId);
-
-                String json = "{\"isSpam\": true, \"isDeleted\": false}";
+                String json = gson.toJson(mail);
                 writeJson(conn, json);
 
                 if (conn.getResponseCode() != 200) {
-                    Log.e("MailRepository", "markSpam failed: " + conn.getResponseCode());
+                    Log.e("MailRepository", "markMailAsSpam failed: " + conn.getResponseCode());
                 }
             } catch (Exception e) {
-                Log.e("MailRepository", "markSpam error", e);
+                Log.e("MailRepository", "markMailAsSpam error", e);
             }
         });
     }
@@ -415,6 +544,19 @@ public class MailRepository {
             mailLiveData.postValue(mail);
         });
         return mailLiveData;
+    }
+
+    // Debug method to check all mails in database
+    public void debugAllMails(String userId) {
+        executorService.execute(() -> {
+            List<MailItem> allMails = mailDao.getAllMailsDebug(userId);
+            android.util.Log.d("MailRepository", "All mails in DB for user " + userId + ": " + (allMails != null ? allMails.size() : 0));
+            if (allMails != null) {
+                for (MailItem mail : allMails) {
+                    android.util.Log.d("MailRepository", "Mail: id=" + mail.id + ", subject=" + mail.subject + ", isDraft=" + mail.isDraft + ", isDeleted=" + mail.isDeleted + ", direction=" + mail.direction);
+                }
+            }
+        });
     }
 
     private HttpURLConnection setupConnection(URL url, String method, String token, String userId) throws Exception {

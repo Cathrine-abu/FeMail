@@ -102,22 +102,39 @@ public class MailItem {
         if (timestamp != null && !timestamp.isEmpty() && (time == null || time.isEmpty())) {
             // Convert ISO timestamp to the format expected by the app
             try {
-                // Parse ISO timestamp and convert to app format
-                java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
-                java.util.Date date = isoFormat.parse(timestamp);
-                java.text.SimpleDateFormat appFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-                this.time = appFormat.format(date);
-            } catch (Exception e) {
-                // If parsing fails, try alternative format
-                try {
-                    java.text.SimpleDateFormat altFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
-                    java.util.Date date = altFormat.parse(timestamp);
-                    java.text.SimpleDateFormat appFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                // Try multiple timestamp formats
+                java.util.Date date = null;
+                java.text.SimpleDateFormat[] formats = {
+                    new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault()),
+                    new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.getDefault()),
+                    new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", java.util.Locale.getDefault()),
+                    new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.getDefault()),
+                    new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault()),
+                    new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                };
+                
+                for (java.text.SimpleDateFormat format : formats) {
+                    try {
+                        date = format.parse(timestamp);
+                        break;
+                    } catch (Exception e) {
+                        // Continue to next format
+                    }
+                }
+                
+                if (date != null) {
+                    java.text.SimpleDateFormat appFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
                     this.time = appFormat.format(date);
-                } catch (Exception e2) {
+                    android.util.Log.d("MailItem", "Successfully converted timestamp: " + timestamp + " -> " + this.time);
+                } else {
                     // If all parsing fails, use timestamp as is
                     this.time = timestamp;
+                    android.util.Log.w("MailItem", "Failed to parse timestamp, using as-is: " + timestamp);
                 }
+            } catch (Exception e) {
+                android.util.Log.e("MailItem", "Error converting timestamp: " + timestamp, e);
+                // If all parsing fails, use timestamp as is
+                this.time = timestamp;
             }
         }
     }

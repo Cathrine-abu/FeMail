@@ -35,6 +35,7 @@ public class MailViewModel extends AndroidViewModel {
     }
 
     public LiveData<List<MailItem>> getDraftMails(String userId) {
+        android.util.Log.d("MailViewModel", "Getting draft mails for userId: " + userId);
         return repository.getDraftMails(userId);
     }
 
@@ -111,8 +112,8 @@ public class MailViewModel extends AndroidViewModel {
         repository.sendMailToServer(token, userId, mail);
     }
 
-    public void markMailAsSpamOnServer(String token, String userId, String mailId) {
-        repository.markMailAsSpam(token, userId, mailId);
+    public void markMailAsSpamOnServer(String token, String userId, MailItem mail) {
+        repository.markMailAsSpam(token, userId, mail);
     }
 
     public void unmarkMailAsSpamOnServer(String token, String userId, String mailId) {
@@ -143,5 +144,9 @@ public class MailViewModel extends AndroidViewModel {
 
     public LiveData<MailItem> getMailById(String mailId) {
         return repository.getMailById(mailId);
+    }
+
+    public void debugAllMails(String userId) {
+        repository.debugAllMails(userId);
     }
 }

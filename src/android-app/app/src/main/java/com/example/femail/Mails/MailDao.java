@@ -36,8 +36,12 @@ public interface MailDao {
     @Query("SELECT * FROM mails WHERE userId = :userId AND direction LIKE '%sent%' AND isDeleted = 0 ORDER BY time DESC")
     LiveData<List<MailItem>> getSentMailsLive(String userId);
     
-    @Query("SELECT * FROM mails WHERE userId = :userId AND isDraft = 1 AND isDeleted = 0 AND direction LIKE '%draft%' ORDER BY time DESC")
+    @Query("SELECT * FROM mails WHERE userId = :userId AND isDraft = 1 AND isDeleted = 0 ORDER BY time DESC")
     LiveData<List<MailItem>> getDraftMailsLive(String userId);
+    
+    // Debug query to see all mails for a user
+    @Query("SELECT * FROM mails WHERE userId = :userId ORDER BY time DESC")
+    List<MailItem> getAllMailsDebug(String userId);
     
     @Query("SELECT * FROM mails WHERE userId = :userId AND isSpam = 1 AND isDeleted = 0 AND isDraft = 0 ORDER BY time DESC")
     LiveData<List<MailItem>> getSpamMailsLive(String userId);
@@ -75,4 +79,8 @@ public interface MailDao {
 
     @Query("SELECT * FROM mails WHERE userId = :userId ORDER BY time DESC LIMIT 1")
     MailItem getLatestMail(String userId);
+    
+    // Debug query specifically for drafts
+    @Query("SELECT * FROM mails WHERE userId = :userId AND isDraft = 1 ORDER BY time DESC")
+    List<MailItem> getDraftsDebug(String userId);
 } 

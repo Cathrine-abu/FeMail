@@ -71,18 +71,49 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
 
     public void setMailList(List<MailItem> mails) {
         if (mails != null) {
-            // Sort mails by timestamp descending (newest first), nulls last
-            Collections.sort(mails, new Comparator<MailItem>() {
+            android.util.Log.d("MailAdapter", "Setting mail list with " + mails.size() + " mails");
+            
+            java.util.Map<String, MailItem> mailMap = new java.util.HashMap<>();
+            for (MailItem mail : mails) {
+                String key = (mail.subject == null ? "" : mail.subject.trim().toLowerCase())
+                           + "|" + (mail.body == null ? "" : mail.body.trim().toLowerCase());
+                // Prefer real mail over temp mail for the same key
+                if (!mail.id.startsWith("temp-") || !mailMap.containsKey(key)) {
+                    mailMap.put(key, mail);
+                }
+            }
+            java.util.List<MailItem> filtered = new java.util.ArrayList<>(mailMap.values());
+            
+            // Log first few mails before sorting
+            for (int i = 0; i < Math.min(3, filtered.size()); i++) {
+                MailItem mail = filtered.get(i);
+                android.util.Log.d("MailAdapter", "Before sorting [" + i + "]: id=" + mail.id + ", time=" + mail.time + ", timestamp=" + mail.timestamp + ", subject=" + mail.subject);
+            }
+            
+            java.util.Collections.sort(filtered, new java.util.Comparator<MailItem>() {
                 @Override
-                public int compare(MailItem m1, MailItem m2) {
-                    if (m1.time == null && m2.time == null) return 0;
-                    if (m1.time == null) return 1;  // nulls last
-                    if (m2.time == null) return -1; // nulls last
-                    return m2.time.compareTo(m1.time);
+                public int compare(MailItem o1, MailItem o2) {
+                    String t1 = o1.timestamp != null ? o1.timestamp : o1.time;
+                    String t2 = o2.timestamp != null ? o2.timestamp : o2.time;
+                    if (t1 == null && t2 == null) return 0;
+                    if (t1 == null) return 1;
+                    if (t2 == null) return -1;
+                    int result = t2.compareTo(t1); // Descending order
+                    android.util.Log.d("MailAdapter", "Comparing: " + t1 + " vs " + t2 + " = " + result);
+                    return result;
                 }
             });
+            
+            // Log first few mails after sorting
+            for (int i = 0; i < Math.min(3, filtered.size()); i++) {
+                MailItem mail = filtered.get(i);
+                android.util.Log.d("MailAdapter", "After sorting [" + i + "]: id=" + mail.id + ", time=" + mail.time + ", timestamp=" + mail.timestamp + ", subject=" + mail.subject);
+            }
+            
+            this.mailList = filtered;
+        } else {
+            this.mailList = mails;
         }
-        this.mailList = mails;
         notifyDataSetChanged();
     }
 
@@ -160,6 +191,7 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
 
         holder.starView.setOnClickListener(v -> {
             mail.isStarred = !mail.isStarred;
+            android.util.Log.d("MailAdapterStar", "Clicked star for mail id=" + mail.id + ", subject=" + mail.subject + ", isStarred=" + mail.isStarred);
             notifyItemChanged(position);
             if (starClickListener != null) {
                 starClickListener.onStarClick(mail, position);

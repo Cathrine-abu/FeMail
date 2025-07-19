@@ -45,8 +45,11 @@ public class SendFragment extends Fragment {
             mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
             String token = AuthPrefs.getToken(requireContext());
             String userId = AuthPrefs.getUserId(requireContext());
-            mailViewModel.updateMailOnServer(token, userId, mail, success -> {});            mailViewModel.fetchMailsFromServer(token, userId);
-            refreshMailsFromServer();
+            mailViewModel.updateMailOnServer(token, userId, mail, success -> {
+                if (success) {
+                    refreshMailsFromServer();
+                }
+            });
         });
         recyclerView.setAdapter(mailAdapter);
 
@@ -115,8 +118,13 @@ public class SendFragment extends Fragment {
             } else if (item.getItemId() == R.id.action_spam) {
                 for (com.example.femail.Mails.MailItem mail : selected) {
                     mail.isSpam = true;
+                    // Save current direction as previousDirection before marking as spam
+                    if (mail.direction != null && !mail.direction.isEmpty()) {
+                        mail.previousDirection = new java.util.ArrayList<>(mail.direction);
+                    }
+                    mail.direction = java.util.Arrays.asList("spam");
                     mailViewModel.update(mail, AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()));
-                    mailViewModel.updateMailOnServer(AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()), mail, success -> {});
+                    mailViewModel.markMailAsSpamOnServer(AuthPrefs.getToken(requireContext()), AuthPrefs.getUserId(requireContext()), mail);
                 }
                 mailAdapter.clearSelection();
                 refreshMailsFromServer();

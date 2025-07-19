@@ -124,9 +124,13 @@ public class TrashFragment extends Fragment {
                 for (MailItem mail : selected) {
                     mail.isSpam = true;
                     mail.isDeleted = false;
+                    // Save current direction as previousDirection before marking as spam
+                    if (mail.direction != null && !mail.direction.isEmpty()) {
+                        mail.previousDirection = new java.util.ArrayList<>(mail.direction);
+                    }
                     mail.direction = java.util.Arrays.asList("spam");
                     mailViewModel.update(mail, token, userId);
-                    mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
+                    mailViewModel.markMailAsSpamOnServer(token, userId, mail);
                 }
                 mailAdapter.clearSelection();
                 mode.finish();
