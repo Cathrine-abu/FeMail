@@ -123,25 +123,15 @@ const InboxMail = () => {
   
   return (
     <div className="inbox-container">
-      {selectedMails.length > 0 && (
-        <div className="contextual-action-bar" style={{
-          display: "flex", alignItems: "center", background: "#f1f3f4", padding: "10px 20px", borderBottom: "1px solid #ccc", position: "sticky", top: 0, zIndex: 100
-        }}>
-          <span style={{marginRight: 16, fontWeight: 600}}>{selectedMails.length}</span>
-          <button onClick={() => handleMoveToTrash(selectedMails)} title="Trash" style={{background: "none", border: "none", fontSize: 22, marginRight: 12, cursor: "pointer"}}>
-            <AiOutlineDelete />
-          </button>
-          <button onClick={() => handleMoveToSpam(selectedMails)} title="Spam" style={{background: "none", border: "none", fontSize: 22, marginRight: 12, cursor: "pointer"}}>
-            <AiOutlineStop />
-          </button>
-          <button onClick={() => setSelectedMails([])} title="Cancel" style={{background: "none", border: "none", fontSize: 22, marginRight: 12, cursor: "pointer"}}>
-            <AiOutlineClose />
-          </button>
-        </div>
-      )}
-      <div className="inbox-header-bar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <h2 style={{ margin: 0 }}>Inbox</h2>
-      </div>
+      {/* Replace custom contextual-action-bar with MailActionBar */}
+      <MailActionBar
+        selected={selectedMails}
+        onDelete={handleDeleteSelected}
+        onMarkSpam={handleMarkSpam}
+        onMoveTo={handleMoveToLabel}
+      />
+      
+      {/* Removed <h2>Inbox</h2> header */}
       <MailListTab onTabSelect={setSelectedTab} />
 
       {error && <p className="error">{error}</p>}
