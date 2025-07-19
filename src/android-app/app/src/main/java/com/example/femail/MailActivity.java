@@ -55,6 +55,9 @@ import android.graphics.Bitmap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.Date;
 import java.util.concurrent.Executors;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -182,8 +185,7 @@ public class MailActivity extends AppCompatActivity {
 
                     // Handle clicks on the menu item text itself
                     menuItem.setOnMenuItemClickListener(item -> {
-                        LabelFragment fragment = LabelFragment.newInstance(label.getName());
-                        navigateToFragment(fragment);
+                        navigateToFragment(LabelFragment.newInstance(String.valueOf(label.getId())));
                         return true;
                     });
                 }
@@ -230,12 +232,7 @@ public class MailActivity extends AppCompatActivity {
                 showCreateOrEditLabelPopup(null);
                 return true;
             }
-            else {
-                String labelName = item.getTitle().toString();
-                LabelFragment fragment = LabelFragment.newInstance(labelName);
-                navigateToFragment(fragment);
-                return true;
-            }
+            return true;
         });
 
         // Set initial fragment (Inbox by default)
@@ -256,6 +253,18 @@ public class MailActivity extends AppCompatActivity {
         TextView phoneText = view.findViewById(R.id.phoneText);
         Button logoutButton = view.findViewById(R.id.logoutButton);
 
+        // Convert birthday date format
+        String birthDateString = user.birthDate;
+        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy", new Locale("he", "IL"));
+        try {
+            Date date = inputFormat.parse(birthDateString);
+            String formattedDate = outputFormat.format(date);
+            birthdayText.setText("Birthday: " + formattedDate);
+        } catch (Exception e) {
+            birthdayText.setText("Birthday: " + birthDateString);
+        }
+
         String genderIcon = "";
         if (user.gender.equals(res.getString(R.string.gender_female))) {
             genderIcon = res.getString(R.string.female_icon);
@@ -264,7 +273,6 @@ public class MailActivity extends AppCompatActivity {
         }
         usernameText.setText(res.getString(R.string.profile_end_mail, user.username));
         fullNameGender.setText(res.getString(R.string.profile_hi, user.fullName, genderIcon));
-        birthdayText.setText(getString(R.string.profile_birthday, user.birthDate));
         phoneText.setText(res.getString(R.string.profile_phone, user.phone));
 
         // Present profile image

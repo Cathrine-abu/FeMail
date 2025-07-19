@@ -1,5 +1,7 @@
 package com.example.femail.Mails;
 
+import android.content.Context;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +35,12 @@ public class MoveCategoryAdapter extends RecyclerView.Adapter<MoveCategoryAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         String category = categories.get(position);
         holder.labelName.setText(category);
+        // Resolve `colorOnSurface` from the current theme
+        TypedValue typedValue = new TypedValue();
+        Context context = holder.itemView.getContext();
+        context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true);
+        int colorOnSurface = typedValue.data;
+        holder.labelName.setTextColor(colorOnSurface);
         holder.itemView.setOnClickListener(v -> listener.onCategoryClick(category));
     }
 
