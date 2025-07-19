@@ -6,6 +6,7 @@ const mailsSchema = new mongoose.Schema({
   user: { type: String, required: true },
   owner: { type: String, required: true },
   direction: { type: [String], required: true },
+  previousDirection: { type: [String], default: [] },
   subject: { type: String, required: false },
   body: { type: String, required: false },
   from: { type: String, required: true },
@@ -38,6 +39,14 @@ const getAllMailsByUser = async (userId) => {
   return await Mails.find({ user: userId }).sort({ timestamp: -1 }).limit(50).lean();
 };
 
+// Return mails that belong to a specific user since a given timestamp
+const getMailsByUserSince = async (userId, sinceTimestamp) => {
+  return await Mails.find({ 
+    user: userId, 
+    timestamp: { $gt: sinceTimestamp } 
+  }).sort({ timestamp: -1 }).lean();
+};
+
 // Find and return a single mail by its ID
 const getMail = async (id) => {
   return await Mails.findOne({ id }).lean();
@@ -52,7 +61,14 @@ const createMail = async (mailData) => {
 
 // Update an existing mail by ID
 const updateMail = async (id, updatedFields) => {
-  const updated = await Mails.findOneAndUpdate({ id }, updatedFields);
+  // Preserve the original timestamp to maintain mail position
+  const existingMail = await Mails.findOne({ id });
+  if (existingMail && existingMail.timestamp) {
+    // Remove timestamp from updatedFields to preserve original timestamp
+    delete updatedFields.timestamp;
+  }
+  
+  const updated = await Mails.findOneAndUpdate({ id }, updatedFields, { new: true });
   return updated;
 };
 
@@ -69,5 +85,6 @@ module.exports = {
   createMail,
   updateMail,
   deleteMail,
-  getAllMailsByUser
+  getAllMailsByUser,
+  getMailsByUserSince
 };

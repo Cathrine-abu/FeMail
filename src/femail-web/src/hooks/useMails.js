@@ -205,25 +205,31 @@ export const useMails = (token, userId) => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ isSpam: true, isDeleted: false}),
-      });
-
-      const combinedText = `${mail.subject} ${mail.body}`;
-      const links =
-        combinedText.match(/(https?:\/\/)?(www\.)?[^\s]+\.[^\s]+/g) || [];
-
-      links.forEach((link) => {
-        fetch("http://localhost:8080/api/blacklist", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({ url: link }),
-        });
+        body: JSON.stringify({ isSpam: true, isDeleted: false, previousDirection: mail.direction, direction: ["spam"] }),
       });
     });
 
+    setMails((prev) =>
+      prev.filter((mail) => !selectedMails.includes(mail.id))
+    );
+    setSelectedMails([]);
+  };
+
+  const unmarkSpam = (selectedMails, mails, setMails, setSelectedMails) => {
+    selectedMails.forEach((id) => {
+      const mail = mails.find((m) => m.id === id);
+      if (!mail) return;
+      const newDirection = mail.previousDirection && mail.previousDirection.length > 0 ? mail.previousDirection : ["inbox"];
+      fetch(`http://localhost:8080/api/mails/${id}`, {
+        method: "PATCH",
+        headers: {
+          "user-id": userId,
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ isSpam: false, direction: newDirection }),
+      });
+    });
     setMails((prev) =>
       prev.filter((mail) => !selectedMails.includes(mail.id))
     );

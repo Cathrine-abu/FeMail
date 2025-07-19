@@ -342,23 +342,34 @@ public class MailActivity extends AppCompatActivity {
                 existingMail.isDraft = true;
                 existingMail.direction = java.util.List.of("draft");
                 existingMail.category = category;
-                mailViewModel.update(existingMail);
+                
+                // Only call updateMailOnServer for existing mails (not insert)
+                String token = AuthPrefs.getToken(this);
+                String userId = AuthPrefs.getUserId(this);
+                mailViewModel.updateMailOnServer(token, userId, existingMail, success -> {
+                    if (success) {
+                        // Update local database after successful server update
+                        mailViewModel.update(existingMail, token, userId);
+                    }
+                });
             } else {
                 // Create new draft mail
                 String currentTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
                 MailItem newMail = new MailItem(
-                    String.valueOf(System.currentTimeMillis()),
+                    "temp-" + System.currentTimeMillis(),
                     mailSubject,
                     mailBody,
-                    "me", // from
+                    AuthPrefs.getUserId(this), // from (userId for backend)
                     mailTo.isEmpty() ? null : java.util.List.of(mailTo),
                     currentTime,
                     false, false, false, true, false, // isStarred, isRead, isSpam, isDraft, isDeleted
                     java.util.List.of("draft"),
-                    "current_user", "current_user", null, category, false,
+                    AuthPrefs.getUserId(this), AuthPrefs.getUserId(this), null, category, false,
                     AuthPrefs.getUserId(this) // userId
                 );
-                mailViewModel.insert(newMail);
+                
+                // Use insert which will handle both local DB and server sync
+                mailViewModel.insert(newMail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
             }
             Toast.makeText(this, "Saved as draft", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
@@ -391,11 +402,16 @@ public class MailActivity extends AppCompatActivity {
                     existingMail.direction = java.util.List.of("sent");
                 }
                 existingMail.category = category;
-                mailViewModel.update(existingMail);
-                // Send to server
+                
+                // Only call updateMailOnServer for existing mails (not insert)
                 String token = AuthPrefs.getToken(this);
                 String userId = AuthPrefs.getUserId(this);
-                mailViewModel.sendMailToServer(this, token, userId, existingMail);
+                mailViewModel.updateMailOnServer(token, userId, existingMail, success -> {
+                    if (success) {
+                        // Update local database after successful server update
+                        mailViewModel.update(existingMail, token, userId);
+                    }
+                });
             } else {
                 // Create new sent mail
                 String currentTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
@@ -408,22 +424,20 @@ public class MailActivity extends AppCompatActivity {
                     direction = java.util.List.of("sent");
                 }
                 MailItem newMail = new MailItem(
-                    String.valueOf(System.currentTimeMillis()),
+                    "temp-" + System.currentTimeMillis(),
                     mailSubject,
                     mailBody,
-                    "me", // from
+                    AuthPrefs.getUserId(this), // from - changed from username to userId
                     java.util.List.of(mailTo),
                     currentTime,
                     false, true, false, false, false, // isStarred, isRead, isSpam, isDraft, isDeleted
                     direction,
-                    "current_user", "current_user", null, category, false,
+                    AuthPrefs.getUserId(this), AuthPrefs.getUserId(this), null, category, false,
                     AuthPrefs.getUserId(this) // userId
                 );
-                mailViewModel.insert(newMail);
-                // Send to server
-                String token = AuthPrefs.getToken(this);
-                String userId = AuthPrefs.getUserId(this);
-                mailViewModel.sendMailToServer(this, token, userId, newMail);
+                
+                // Use insert which will handle both local DB and server sync
+                mailViewModel.insert(newMail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
             }
             Toast.makeText(this, "Mail sent", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
@@ -502,6 +516,7 @@ public class MailActivity extends AppCompatActivity {
                 labelViewModel.sendLabelToServer(this, token, userId, newLabel);
             }
             dialog.dismiss();
+            //refreshMailsFromServer();
         });
 
         dialog.show();
@@ -556,7 +571,6 @@ public class MailActivity extends AppCompatActivity {
             labelViewModel.deleteLabelOnServer(this, token, userId, label.getId());
             // Delete the label
             labelViewModel.delete(label);
-            dialog.dismiss();
         });
 
         dialog.show();
@@ -600,8 +614,13 @@ public class MailActivity extends AppCompatActivity {
     // Add this method to update the mail's category
     private void moveMailToCategory(MailItem mail, String category) {
         mail.category = category.toLowerCase();
-        mailViewModel.update(mail);
+        mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
+        String token = AuthPrefs.getToken(this);
+        String userId = AuthPrefs.getUserId(this);
+        mailViewModel.updateMailOnServer(token, userId, mail, success -> {});
+        mailViewModel.fetchMailsFromServer(token, userId);
         Toast.makeText(this, "Mail moved to " + category, Toast.LENGTH_SHORT).show();
+        //refreshMailsFromServer();
     }
 
     private void triggerSearch() {

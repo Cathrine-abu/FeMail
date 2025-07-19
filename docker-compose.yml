@@ -41,6 +41,8 @@ services:
     command:
       - "${BLACKLIST_IP}"
       - "${BLACKLIST_PORT}"
+    volumes:
+      - ./data:/usr/src/data
 
   frontend:
     build:

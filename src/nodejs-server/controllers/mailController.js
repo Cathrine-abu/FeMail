@@ -11,9 +11,22 @@ exports.getAllMails = async (req, res) => {
     }
 
     try {
-        const userMails = await storeMails.getAllMailsByUser(userId);
-        const recentMails = userMails.slice(-50).reverse();
-        res.status(200).json(recentMails);
+        const since = req.query.since;
+        let userMails;
+        
+        if (since) {
+            // Fetch only mails newer than the since timestamp
+            userMails = await storeMails.getMailsByUserSince(userId, since);
+            // console.log('[MAIL FETCH]', userId, 'since', since, 'found', userMails.length, 'new mails');
+        } else {
+            // Fetch all mails (existing behavior)
+            userMails = await storeMails.getAllMailsByUser(userId);
+            const recentMails = userMails.slice(-50).reverse();
+            // console.log('[MAIL FETCH]', userId, recentMails.map(m => ({id: m.id, time: m.time, subject: m.subject})));
+            userMails = recentMails;
+        }
+        
+        res.status(200).json(userMails);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -36,30 +49,45 @@ exports.sendMail = async (req, res) => {
     const recipients = Array.isArray(to) ? to : [to];
 
     const urlRegex = /(https?:\/\/)?(www\.)?[^\s]+\.[^\s]+/g;
-    const urls = [
+    let urls = [
         ...(subject.match(urlRegex) || []),
         ...(body.match(urlRegex) || [])
     ];
+    if (Array.isArray(to)) {
+        for (const recipient of to) {
+            urls.push(...(recipient.match(urlRegex) || []));
+        }
+    } else if (typeof to === 'string') {
+        urls.push(...(to.match(urlRegex) || []));
+    }
 
+    // Check if any URL is blacklisted
+    const fs = require('fs');
+    const path = require('path');
+    const urlsFile = path.join(__dirname, '../../data/urls.txt');
+    let fileContent = '';
+    if (fs.existsSync(urlsFile)) {
+        fileContent = fs.readFileSync(urlsFile, 'utf-8');
+    }
+    const blacklistedUrls = new Set(fileContent.split('\n').filter(Boolean));
     let isSpam = false;
-
     for (const url of urls) {
-        try {
-            const response = await blacklistModel.isBlacklisted(url);
-            const parts = response.split('\n\n');
-            const body = parts[parts.length - 1].trim();
-            const result = {
-                ok: true,
-                blacklisted: body === 'true true'
-            };
-            if (!result.ok) {
-                return res.status(500).json({ error: 'Blacklist check failed' });
-            }
-            if (result.blacklisted) {
-                isSpam = true;
-            }
-        } catch (err) {
-            return res.status(500).json({ error: 'Blacklist check failed' });
+        if (blacklistedUrls.has(url)) {
+            isSpam = true;
+            break;
+        }
+    }
+
+    // Append URLs to data/urls.txt if mail is marked as spam (same as PATCH handler)
+    if (isSpam && urls.length > 0) {
+        const urlsToAppend = urls.filter(url => !blacklistedUrls.has(url));
+        if (urlsToAppend.length > 0) {
+            const urlsToAppendStr = urlsToAppend.join('\n') + '\n';
+            fs.appendFile(urlsFile, urlsToAppendStr, (err) => {
+                if (err) {
+                    console.error('[urls.txt] Failed to append URLs:', err);
+                }
+            });
         }
     }
 
@@ -85,7 +113,7 @@ exports.sendMail = async (req, res) => {
                 to: recipient,
                 user: recipientUser.id.toString(),
                 owner: recipientUser.id.toString(),
-                direction: ['received'],
+                direction: isSpam ? ['spam'] : ['received'],
                 timestamp,
                 isDeleted: false,
                 isDraft: false,
@@ -103,20 +131,21 @@ exports.sendMail = async (req, res) => {
         recipients[0] === senderUser.username;
 
     const finalDirection = isSelfMail
-        ? (isDraft ? ['draft', 'received'] : ['sent', 'received'])
+        ? (isDraft ? ['draft'] : ['sent', 'received'])
         : Array.isArray(direction)
             ? direction
-            : [direction || (isDraft ? 'draft' : 'sent')];
+            : [direction || (isDraft ? 'draft' : (isSpam ? 'spam' : 'sent'))];
 
+    console.log(`[DRAFT] Creating mail: isDraft=${isDraft}, isSelfMail=${isSelfMail}, finalDirection=${JSON.stringify(finalDirection)}`);
 
-    const sentMail = storeMails.createMail({
+    const sentMail = await storeMails.createMail({
         subject,
         body,
         from: senderUser.username,
         to: recipients,
         user: from,
         owner: from,
-        direction: finalDirection,
+        direction: isSpam ? ['spam'] : finalDirection,
         timestamp,
         isDeleted: false,
         isDraft: isDraft || false,
@@ -126,11 +155,7 @@ exports.sendMail = async (req, res) => {
         isRead: false
     });
 
-    return res.status(201).location(`/api/mails/${sentMail.id}`).json({
-        id: `${sentMail.id}`,
-        isSpam: `${sentMail.isSpam}`,
-        timestamp: `${sentMail.timestamp}`
-    });
+    return res.status(201).location(`/api/mails/${sentMail.id}`).json(sentMail);
 };
 
 
@@ -157,20 +182,66 @@ exports.updateMail = async (req, res) => {
     const userId = req.header('user-id');
     if (!userId) return res.status(400).json({ error: 'Missing user-id header' });
 
+    // Debug log: mail ID and incoming PATCH body
+    console.log(`[PATCH /api/mails/${id}] userId=${userId} body=`, req.body);
+
     try {
         const mail = await storeMails.getMail(id);
         if (!mail || mail.owner !== userId) return res.status(404).json({ error: 'Mail not found' });
 
         const updatedFields = req.body;
+        // Ensure PATCH can update isSpam, isDeleted, isStarred, category, etc.
+        // (No code change needed if storeMails.updateMail uses $set)
+        // Optionally, validate allowed fields here
+
+        // Always set previousDirection if present in PATCH body
+        if (updatedFields.previousDirection !== undefined) {
+            mail.previousDirection = updatedFields.previousDirection;
+        }
+
+        // When marking as spam, save current direction as previousDirection
+        if (updatedFields.isSpam === true && !mail.isSpam) {
+            updatedFields.previousDirection = mail.direction;
+            console.log(`[SPAM] Saving previousDirection for mail ${id}:`, mail.direction);
+        }
+
+        // When unspamming, restore previousDirection and clear it
+        if (mail.isSpam && updatedFields.isSpam === false && mail.previousDirection?.length > 0) {
+            updatedFields.direction = mail.previousDirection;
+            updatedFields.previousDirection = [];
+            console.log(`[UNSPAM] Restoring direction for mail ${id}:`, mail.previousDirection);
+        }
+
         const urlsToCheck = [];
         const urlRegex = /(https?:\/\/)?(www\.)?[^\s]+\.[^\s]+/g;
 
+        // Debug: Log subject and body being checked for URLs
+        //console.log('[PATCH] Checking subject for URLs:', updatedFields.subject);
+        //console.log('[PATCH] Checking body for URLs:', updatedFields.body);
+
+        // Extract URLs from updated fields if provided
         if (updatedFields.subject) {
             urlsToCheck.push(...(updatedFields.subject.match(urlRegex) || []));
         }
         if (updatedFields.body) {
             urlsToCheck.push(...(updatedFields.body.match(urlRegex) || []));
         }
+
+        // If marking as spam and no URLs found in updates, extract from existing mail content
+        if (updatedFields.isSpam === true && urlsToCheck.length === 0) {
+            const existingUrls = [];
+            if (mail.subject) {
+                existingUrls.push(...(mail.subject.match(urlRegex) || []));
+            }
+            if (mail.body) {
+                existingUrls.push(...(mail.body.match(urlRegex) || []));
+            }
+            urlsToCheck.push(...existingUrls);
+            //console.log('[PATCH] Extracted URLs from existing mail content:', existingUrls);
+        }
+
+        //console.log('[PATCH] Final URLs to check:', urlsToCheck);
+        //console.log('[PATCH] Updated fields:', updatedFields);
 
         let isSpam = typeof updatedFields.isSpam === 'boolean' ? updatedFields.isSpam : false;
 
@@ -196,15 +267,26 @@ exports.updateMail = async (req, res) => {
 
         // Append URLs to data/urls.txt if mail is marked as spam
         if (isSpam && urlsToCheck.length > 0) {
+            console.log('[SPAM PATCH] isSpam:', isSpam, 'urlsToCheck:', urlsToCheck, 'mail:', updatedFields);
             const fs = require('fs');
             const path = require('path');
             const urlsFile = path.join(__dirname, '../../data/urls.txt');
-            const urlsToAppend = urlsToCheck.join('\n') + '\n';
-            fs.appendFile(urlsFile, urlsToAppend, (err) => {
-                if (err) {
-                    console.error('Failed to append URLs to urls.txt:', err);
-                }
-            });
+            let fileContent = '';
+            if (fs.existsSync(urlsFile)) {
+                fileContent = fs.readFileSync(urlsFile, 'utf-8');
+            }
+            const existingUrls = new Set(fileContent.split('\n').filter(Boolean));
+            const urlsToActuallyAppend = urlsToCheck.filter(url => !existingUrls.has(url));
+            if (urlsToActuallyAppend.length > 0) {
+                const urlsToAppend = urlsToActuallyAppend.join('\n') + '\n';
+                fs.appendFile(urlsFile, urlsToAppend, (err) => {
+                    if (err) {
+                        console.error('[urls.txt] Failed to append URLs:', err);
+                    } else {
+                        //console.log('[urls.txt] Successfully appended URLs:', urlsToActuallyAppend);
+                    }
+                });
+            }
         }
 
         updatedFields.isSpam = isSpam;
@@ -248,11 +330,7 @@ exports.updateMail = async (req, res) => {
 
         const updated = await storeMails.updateMail(id, updatedFields);
 
-        return res.status(200).location(`/api/mails/${mail.id}`).json({
-            id: `${updated.id}`,
-            isSpam: `${updated.isSpam}`,
-            timestamp: `${updated.timestamp}`
-        });
+        return res.status(200).location(`/api/mails/${mail.id}`).json(updated);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -262,15 +340,21 @@ exports.updateMail = async (req, res) => {
 exports.deleteMail = async (req, res) => {
     const { id } = req.params;
     const userId = req.header('user-id');
+    console.log(`[DELETE] Attempting to delete mail id=${id} for userId=${userId}`);
     if (!userId) return res.status(400).json({ error: 'Missing user-id header' });
 
     try {
         const mail = await storeMails.getMail(id);
-        if (!mail || mail.owner !== userId) return res.status(404).json({ error: 'Mail not found' });
+        if (!mail || mail.owner !== userId) {
+            console.log(`[DELETE] Mail not found or unauthorized. id=${id}, userId=${userId}`);
+            return res.status(404).json({ error: 'Mail not found' });
+        }
 
         await storeMails.deleteMail(id);
+        console.log(`[DELETE] Successfully deleted mail id=${id} for userId=${userId}`);
         res.status(204).send();
     } catch (err) {
+        console.error(`[DELETE] Error deleting mail id=${id} for userId=${userId}:`, err);
         res.status(500).json({ error: err.message });
     }
 };

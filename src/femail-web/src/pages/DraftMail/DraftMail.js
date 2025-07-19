@@ -18,37 +18,7 @@ const DraftsMail = () => {
   const { draftMails, setDraftMails, addMail, addDraftMail, updateDraftMail } = useOutletContext();
 
 
-  useEffect(() => {
-    fetch("http://localhost:8080/api/mails", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
-      "user-id": userId
-    }
-  })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch mails");
-        return res.json();
-      })
-        .then((data) => {
-        if (!Array.isArray(data)) {
-            console.error("Expected an array but got:", data);
-            return;
-        }
-        const filtered = data.filter(
-            (mail) =>
-            mail.direction.includes("draft") &&
-            (!mail.isDeleted || mail.isDeleted === undefined) &&
-            mail.isDraft === true
-        );
-        setDraftMails(filtered);
-        })
-
-      .catch((err) => {
-        console.error(err);
-      });
-  }, [token, userId, setDraftMails]);
+  // No need to fetch data here - parent component handles it
 
   const { deleteSelectedMails, handleStarredMail, handleDeleteMail } = useMails(token, userId, draftMails, setDraftMails);
 

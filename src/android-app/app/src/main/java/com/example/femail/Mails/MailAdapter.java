@@ -16,6 +16,8 @@ import com.example.femail.R;
 import com.example.femail.ViewMail;
 
 import java.util.List;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder> {
 
@@ -68,7 +70,50 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
     }
 
     public void setMailList(List<MailItem> mails) {
-        this.mailList = mails;
+        if (mails != null) {
+            android.util.Log.d("MailAdapter", "Setting mail list with " + mails.size() + " mails");
+            
+            java.util.Map<String, MailItem> mailMap = new java.util.HashMap<>();
+            for (MailItem mail : mails) {
+                String key = (mail.subject == null ? "" : mail.subject.trim().toLowerCase())
+                           + "|" + (mail.body == null ? "" : mail.body.trim().toLowerCase());
+                // Prefer real mail over temp mail for the same key
+                if (!mail.id.startsWith("temp-") || !mailMap.containsKey(key)) {
+                    mailMap.put(key, mail);
+                }
+            }
+            java.util.List<MailItem> filtered = new java.util.ArrayList<>(mailMap.values());
+            
+            // Log first few mails before sorting
+            for (int i = 0; i < Math.min(3, filtered.size()); i++) {
+                MailItem mail = filtered.get(i);
+                android.util.Log.d("MailAdapter", "Before sorting [" + i + "]: id=" + mail.id + ", time=" + mail.time + ", timestamp=" + mail.timestamp + ", subject=" + mail.subject);
+            }
+            
+            java.util.Collections.sort(filtered, new java.util.Comparator<MailItem>() {
+                @Override
+                public int compare(MailItem o1, MailItem o2) {
+                    String t1 = o1.timestamp != null ? o1.timestamp : o1.time;
+                    String t2 = o2.timestamp != null ? o2.timestamp : o2.time;
+                    if (t1 == null && t2 == null) return 0;
+                    if (t1 == null) return 1;
+                    if (t2 == null) return -1;
+                    int result = t2.compareTo(t1); // Descending order
+                    android.util.Log.d("MailAdapter", "Comparing: " + t1 + " vs " + t2 + " = " + result);
+                    return result;
+                }
+            });
+            
+            // Log first few mails after sorting
+            for (int i = 0; i < Math.min(3, filtered.size()); i++) {
+                MailItem mail = filtered.get(i);
+                android.util.Log.d("MailAdapter", "After sorting [" + i + "]: id=" + mail.id + ", time=" + mail.time + ", timestamp=" + mail.timestamp + ", subject=" + mail.subject);
+            }
+            
+            this.mailList = filtered;
+        } else {
+            this.mailList = mails;
+        }
         notifyDataSetChanged();
     }
 
@@ -93,7 +138,28 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
             holder.timeView.setText(mail.time); // fallback
         }
         holder.starView.setImageResource(mail.isStarred ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
-        holder.fromView.setText(mail.from);
+        
+        // Show spam icon in Sent folder if mail is spam
+        ImageView spamView = holder.itemView.findViewById(R.id.item_mail_spam);
+        if ("sent".equals(sourceFragment) && mail.isSpam) {
+            spamView.setVisibility(View.VISIBLE);
+        } else {
+            spamView.setVisibility(View.GONE);
+        }
+        
+        // Display sender/recipient information based on mail direction
+        if (mail.direction != null && mail.direction.contains("sent")) {
+            // For sent mails, show "To: [recipients]"
+            String recipients = "";
+            if (mail.to != null && !mail.to.isEmpty()) {
+                recipients = String.join(", ", mail.to);
+            }
+            holder.fromView.setText("To: " + recipients);
+        } else {
+            // For received mails, show "From: [sender]"
+            holder.fromView.setText("From: " + mail.from);
+        }
+        
         holder.bodyView.setText(mail.body);
 
         // Hide star icon if in trash
@@ -125,6 +191,7 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
 
         holder.starView.setOnClickListener(v -> {
             mail.isStarred = !mail.isStarred;
+            android.util.Log.d("MailAdapterStar", "Clicked star for mail id=" + mail.id + ", subject=" + mail.subject + ", isStarred=" + mail.isStarred);
             notifyItemChanged(position);
             if (starClickListener != null) {
                 starClickListener.onStarClick(mail, position);
