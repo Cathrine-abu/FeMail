@@ -233,16 +233,8 @@ public class RegisterFragment extends Fragment {
                 int responseCode = conn.getResponseCode();
                 android.util.Log.d("ConnectivityTest", "Server responded with code: " + responseCode);
                 
-                getActivity().runOnUiThread(() -> {
-                    if (responseCode >= 200 && responseCode < 500) {
-                        showToast("Server is reachable (HTTP " + responseCode + ")");
-                    } else {
-                        showToast("Server returned error: " + responseCode);
-                    }
-                });
             } catch (Exception e) {
                 android.util.Log.e("ConnectivityTest", "Failed to connect to server", e);
-                getActivity().runOnUiThread(() -> showToast("Cannot connect to server: " + e.getMessage()));
             }
         });
     }
