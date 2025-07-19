@@ -126,19 +126,9 @@ public class LoginFragment extends Fragment {
 
                 int responseCode = conn.getResponseCode();
                 android.util.Log.d("ServerConnectivity", "Response code: " + responseCode);
-
-                getActivity().runOnUiThread(() -> {
-                    if (responseCode == 200) {
-                        Toast.makeText(getActivity(), "Server is reachable", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(getActivity(), "Server is not reachable, response code: " + responseCode, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                
             } catch (Exception e) {
                 android.util.Log.e("ServerConnectivity", "Error checking server connectivity", e);
-                getActivity().runOnUiThread(() -> {
-                    Toast.makeText(getActivity(), "Error checking server connectivity: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
             }
         });
     }
