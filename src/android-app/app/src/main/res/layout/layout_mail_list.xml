@@ -12,7 +12,6 @@
         android:text="Mail List"
         android:textSize="16sp"
         android:textStyle="bold"
-        android:textColor="@android:color/black"
         android:gravity="start"
         android:layout_marginBottom="8dp" />
 

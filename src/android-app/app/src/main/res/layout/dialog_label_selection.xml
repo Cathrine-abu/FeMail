@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="16dp"
     android:layout_width="match_parent"
@@ -11,13 +12,16 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/label_dialog_cancel"
-            android:layout_width="72dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="@string/cancel"
+            android:textColor="@color/accent"
             android:paddingHorizontal="8dp"
-            android:text="Cancel"
-            android:textSize="14sp" />
+            app:cornerRadius="32dp"
+            android:textSize="14sp"/>
 
         <TextView
             android:id="@+id/label_dialog_title"
@@ -29,13 +33,19 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/label_dialog_done"
-            android:layout_width="71dp"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_marginStart="12dp"
             android:paddingHorizontal="8dp"
+            android:backgroundTint="@color/accent"
+            android:textColor="@android:color/white"
             android:text="Done"
+            app:cornerRadius="32dp"
             android:textSize="14sp" />
+
     </LinearLayout>
 
     <ScrollView
