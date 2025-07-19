@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -300,7 +302,23 @@ public class MailActivity extends AppCompatActivity {
 
         AlertDialog dialog = builder.create();
 
+        List<String> recipients = new ArrayList<>();
         EditText inputTo = view.findViewById(R.id.inputTo);
+        inputTo.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                // Clear and rebuild recipient list from input
+                recipients.clear();
+                String[] split = s.toString().split(",");
+                for (String item : split) {
+                    String email = item.trim();
+                    if (!email.isEmpty()) recipients.add(email);
+                }
+            }
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+        });
+
         EditText inputSubject = view.findViewById(R.id.inputSubject);
         EditText inputBody = view.findViewById(R.id.inputBody);
         TextView mailTitle = view.findViewById(R.id.mailTitle);
@@ -329,7 +347,7 @@ public class MailActivity extends AppCompatActivity {
 
         // Save as draft button
         btnDraft.setOnClickListener(v -> {
-            String mailTo = inputTo.getText().toString().trim();
+            List<String> mailToList = new ArrayList<>(recipients);
             String mailSubject = inputSubject.getText().toString().trim();
             String mailBody = inputBody.getText().toString().trim();
             // Drafts can have empty fields - no validation needed
@@ -337,7 +355,7 @@ public class MailActivity extends AppCompatActivity {
             if (existingMail != null) {
                 // Update existing mail as draft
                 String currentTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
-                existingMail.to = mailTo.isEmpty() ? null : java.util.List.of(mailTo);
+                existingMail.to = mailToList.isEmpty() ? null : mailToList;
                 existingMail.subject = mailSubject;
                 existingMail.body = mailBody;
                 existingMail.time = currentTime;
@@ -362,7 +380,7 @@ public class MailActivity extends AppCompatActivity {
                     mailSubject,
                     mailBody,
                     AuthPrefs.getUserId(this), // from (userId for backend)
-                    mailTo.isEmpty() ? null : java.util.List.of(mailTo),
+                    mailToList.isEmpty() ? null : mailToList,
                     currentTime,
                     false, false, false, true, false, // isStarred, isRead, isSpam, isDraft, isDeleted
                     java.util.List.of("draft"),
@@ -379,11 +397,11 @@ public class MailActivity extends AppCompatActivity {
 
         // Send button - save as sent mail
         btnCreate.setOnClickListener(v -> {
-            String mailTo = inputTo.getText().toString().trim();
+            List<String> mailToList = new ArrayList<>(recipients);
             String mailSubject = inputSubject.getText().toString().trim();
             String mailBody = inputBody.getText().toString().trim();
 
-            if (mailTo.isEmpty() || mailSubject.isEmpty() || mailBody.isEmpty()) {
+            if (mailToList.isEmpty() || mailSubject.isEmpty() || mailBody.isEmpty()) {
                 mailError.setText(R.string.mandatory_fields);
                 return;
             }
@@ -391,14 +409,14 @@ public class MailActivity extends AppCompatActivity {
             if (existingMail != null) {
                 // Update existing mail as sent
                 String currentTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
-                existingMail.to = java.util.List.of(mailTo);
+                existingMail.to = mailToList;
                 existingMail.subject = mailSubject;
                 existingMail.body = mailBody;
                 existingMail.time = currentTime;
                 existingMail.isDraft = false;
                 // If sending to yourself, set direction to both sent and inbox
                 String currentUserEmail = AuthPrefs.getUsername(this);
-                if (mailTo.equals(currentUserEmail)) {
+                if (mailToList.contains(currentUserEmail)) {
                     existingMail.direction = java.util.List.of("sent", "inbox");
                 } else {
                     existingMail.direction = java.util.List.of("sent");
@@ -420,7 +438,7 @@ public class MailActivity extends AppCompatActivity {
                 // If sending to yourself, set direction to both sent and inbox
                 String currentUserEmail = AuthPrefs.getUsername(this);
                 java.util.List<String> direction;
-                if (mailTo.equals(currentUserEmail)) {
+                if (mailToList.contains(currentUserEmail)) {
                     direction = java.util.List.of("sent", "inbox");
                 } else {
                     direction = java.util.List.of("sent");
@@ -430,7 +448,7 @@ public class MailActivity extends AppCompatActivity {
                     mailSubject,
                     mailBody,
                     AuthPrefs.getUserId(this), // from - changed from username to userId
-                    java.util.List.of(mailTo),
+                    mailToList,
                     currentTime,
                     false, true, false, false, false, // isStarred, isRead, isSpam, isDraft, isDeleted
                     direction,
