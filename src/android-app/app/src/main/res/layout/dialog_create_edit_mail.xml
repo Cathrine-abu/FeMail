@@ -28,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="@string/to"
+            android:hint="To (comma-separated)"
             android:inputType="textEmailAddress"
             android:minHeight="48dp"
             android:padding="12dp" />
