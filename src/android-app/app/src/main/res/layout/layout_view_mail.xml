@@ -142,8 +142,7 @@
         android:orientation="vertical"
         android:visibility="gone"
         android:layout_marginTop="8dp"
-        android:layout_marginStart="50dp"
-        android:background="@drawable/mail_details_border">
+        android:layout_marginStart="50dp">
 
         <TextView
             android:id="@+id/detail_from"

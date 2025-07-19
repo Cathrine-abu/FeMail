@@ -276,6 +276,8 @@ public class MailActivity extends AppCompatActivity {
         profileImage.setImageBitmap(bitmap);
 
         logoutButton.setOnClickListener(v -> {
+            // Change to light mode
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
             // Clear token or session
             AuthPrefs.clearAuthData(this);
             // Navigate to MainActivity
