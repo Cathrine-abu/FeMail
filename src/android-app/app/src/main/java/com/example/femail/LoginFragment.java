@@ -126,11 +126,9 @@ public class LoginFragment extends Fragment {
 
                 int responseCode = conn.getResponseCode();
                 android.util.Log.d("ServerConnectivity", "Response code: " + responseCode);
-
-                // Removed all Toasts here
+                
             } catch (Exception e) {
                 android.util.Log.e("ServerConnectivity", "Error checking server connectivity", e);
-                // Removed Toast here too
             }
         });
     }
