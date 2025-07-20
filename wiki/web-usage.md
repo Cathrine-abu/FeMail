@@ -1,5 +1,5 @@
 # 🚀 Web Usage Guide
-Make sure you have completed all the necessary steps as described in [wiki/setup&deploy](wiki/setup&deploy.md).
+Make sure you have completed all the necessary steps as described in [wiki/setup&deploy](setup&deploy.md).
 
 ## 🔐 Registration and Login
 
