@@ -17,12 +17,10 @@ exports.getAllMails = async (req, res) => {
         if (since) {
             // Fetch only mails newer than the since timestamp
             userMails = await storeMails.getMailsByUserSince(userId, since);
-            // console.log('[MAIL FETCH]', userId, 'since', since, 'found', userMails.length, 'new mails');
         } else {
             // Fetch all mails (existing behavior)
             userMails = await storeMails.getAllMailsByUser(userId);
             const recentMails = userMails.slice(-50).reverse();
-            // console.log('[MAIL FETCH]', userId, recentMails.map(m => ({id: m.id, time: m.time, subject: m.subject})));
             userMails = recentMails;
         }
         
@@ -136,8 +134,6 @@ exports.sendMail = async (req, res) => {
             ? direction
             : [direction || (isDraft ? 'draft' : (isSpam ? 'spam' : 'sent'))];
 
-    console.log(`[DRAFT] Creating mail: isDraft=${isDraft}, isSelfMail=${isSelfMail}, finalDirection=${JSON.stringify(finalDirection)}`);
-
     const sentMail = await storeMails.createMail({
         subject,
         body,
@@ -182,9 +178,6 @@ exports.updateMail = async (req, res) => {
     const userId = req.header('user-id');
     if (!userId) return res.status(400).json({ error: 'Missing user-id header' });
 
-    // Debug log: mail ID and incoming PATCH body
-    console.log(`[PATCH /api/mails/${id}] userId=${userId} body=`, req.body);
-
     try {
         const mail = await storeMails.getMail(id);
         if (!mail || mail.owner !== userId) return res.status(404).json({ error: 'Mail not found' });
@@ -202,22 +195,16 @@ exports.updateMail = async (req, res) => {
         // When marking as spam, save current direction as previousDirection
         if (updatedFields.isSpam === true && !mail.isSpam) {
             updatedFields.previousDirection = mail.direction;
-            console.log(`[SPAM] Saving previousDirection for mail ${id}:`, mail.direction);
         }
 
         // When unspamming, restore previousDirection and clear it
         if (mail.isSpam && updatedFields.isSpam === false && mail.previousDirection?.length > 0) {
             updatedFields.direction = mail.previousDirection;
             updatedFields.previousDirection = [];
-            console.log(`[UNSPAM] Restoring direction for mail ${id}:`, mail.previousDirection);
         }
 
         const urlsToCheck = [];
         const urlRegex = /(https?:\/\/)?(www\.)?[^\s]+\.[^\s]+/g;
-
-        // Debug: Log subject and body being checked for URLs
-        //console.log('[PATCH] Checking subject for URLs:', updatedFields.subject);
-        //console.log('[PATCH] Checking body for URLs:', updatedFields.body);
 
         // Extract URLs from updated fields if provided
         if (updatedFields.subject) {
@@ -237,11 +224,7 @@ exports.updateMail = async (req, res) => {
                 existingUrls.push(...(mail.body.match(urlRegex) || []));
             }
             urlsToCheck.push(...existingUrls);
-            //console.log('[PATCH] Extracted URLs from existing mail content:', existingUrls);
         }
-
-        //console.log('[PATCH] Final URLs to check:', urlsToCheck);
-        //console.log('[PATCH] Updated fields:', updatedFields);
 
         let isSpam = typeof updatedFields.isSpam === 'boolean' ? updatedFields.isSpam : false;
 
@@ -267,7 +250,6 @@ exports.updateMail = async (req, res) => {
 
         // Append URLs to data/urls.txt if mail is marked as spam
         if (isSpam && urlsToCheck.length > 0) {
-            console.log('[SPAM PATCH] isSpam:', isSpam, 'urlsToCheck:', urlsToCheck, 'mail:', updatedFields);
             const fs = require('fs');
             const path = require('path');
             const urlsFile = path.join(__dirname, '../../data/urls.txt');
@@ -283,7 +265,6 @@ exports.updateMail = async (req, res) => {
                     if (err) {
                         console.error('[urls.txt] Failed to append URLs:', err);
                     } else {
-                        //console.log('[urls.txt] Successfully appended URLs:', urlsToActuallyAppend);
                     }
                 });
             }
@@ -340,18 +321,15 @@ exports.updateMail = async (req, res) => {
 exports.deleteMail = async (req, res) => {
     const { id } = req.params;
     const userId = req.header('user-id');
-    console.log(`[DELETE] Attempting to delete mail id=${id} for userId=${userId}`);
     if (!userId) return res.status(400).json({ error: 'Missing user-id header' });
 
     try {
         const mail = await storeMails.getMail(id);
         if (!mail || mail.owner !== userId) {
-            console.log(`[DELETE] Mail not found or unauthorized. id=${id}, userId=${userId}`);
             return res.status(404).json({ error: 'Mail not found' });
         }
 
         await storeMails.deleteMail(id);
-        console.log(`[DELETE] Successfully deleted mail id=${id} for userId=${userId}`);
         res.status(204).send();
     } catch (err) {
         console.error(`[DELETE] Error deleting mail id=${id} for userId=${userId}:`, err);

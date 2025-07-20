@@ -181,7 +181,6 @@ public class MailAdapter extends RecyclerView.Adapter<MailAdapter.MailViewHolder
                 for (MailItem m : mailList) if (m.isSelected) anySelected = true;
                 selectionMode = anySelected;
             }
-            Toast.makeText(context, "Adapter: Notifying selectionListener: " + selectionMode + ", " + getSelectedMails().size(), Toast.LENGTH_SHORT).show();
             if (selectionListener != null)
                 selectionListener.onSelectionModeChanged(selectionMode, getSelectedMails().size());
             notifyItemChanged(position);
