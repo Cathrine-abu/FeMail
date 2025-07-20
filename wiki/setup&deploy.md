@@ -36,8 +36,7 @@ This guide explains how to run the app
    * Please make sure that port `8080` is available on your machine (i.e., not used by other applications or blocked by firewall) and **don’t use this port in the `.env` file**
 
 6. Wait for Docker Compose to finish starting all containers (`blacklistserver`, `web`, `frontend`)
-   Once everything is up, you’ll see the message:
-   **"webpack compiled ..."** — indicating that the app is ready
+   Once everything is up, the app is ready to use
 
 ## 🖥️ Using Web Application
 After completing all [Setup and Usage](#setup-and-usage) steps
