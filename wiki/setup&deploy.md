@@ -45,7 +45,7 @@ After completing all [Setup and Usage](#setup-and-usage) steps
    - `http://<your-ip>:FRONTEND_PORT` — to access it from another device on the same network</br>
 `FRONTEND_PORT` is the same port you set in the `.env` file</br>
 2. ✅ You can now start using the full application!</br>
-For Detailed explanation and user guide for the web application, see [wiki/web-usage](wiki/web-usage.md)
+For Detailed explanation and user guide for the web application, see [wiki/web-usage](web-usage.md)
 
 ## 📱 Using Android Application
 After completing all [Setup and Usage](#setup-and-usage) steps
@@ -57,4 +57,4 @@ After completing all [Setup and Usage](#setup-and-usage) steps
    - Click the green **Run** button in Android Studio, or press **Shift + F10**
    - The app should build and launch on your emulator/device
 4. ✅ You can now start using the full application!</br>
-For Detailed explanation and user guide for the web application, see [wiki/android-usage](wiki/android-usage.md)
+For Detailed explanation and user guide for the web application, see [wiki/android-usage](android-usage.md)
