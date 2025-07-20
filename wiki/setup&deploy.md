@@ -39,7 +39,7 @@ This guide explains how to run the app
    Once everything is up, the app is ready to use
 
 ## 🖥️ Using Web Application
-After completing all [Setup and Usage](#setup-and-usage) steps
+After completing all [Setup and Usage](#️-setup-and-usage) steps
 1. open your browser and go to:
    - `http://localhost:FRONTEND_PORT` — to access the web app from your local machine
    - `http://<your-ip>:FRONTEND_PORT` — to access it from another device on the same network</br>
@@ -48,7 +48,7 @@ After completing all [Setup and Usage](#setup-and-usage) steps
 For Detailed explanation and user guide for the web application, see [wiki/web-usage](web-usage.md)
 
 ## 📱 Using Android Application
-After completing all [Setup and Usage](#setup-and-usage) steps
+After completing all [Setup and Usage](#️-setup-and-usage) steps
 1. Open the Android project in **Android Studio**
    - Allow Gradle to sync if needed
 2. Launch the emulator
