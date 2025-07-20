@@ -1,12 +1,12 @@
 # 📬 FeMail – Full-Stack Gmail-like Mail App (Web + Android)
 
 ## 📑 Contents
-- [Introduction](#introduction)
-- [Architecture](#architecture)
-- [API Endpoints](#api-endpoints)
-- [Client Capabilities](#client-capabilities)
-- [Project Structure](#project-structure)
-- [Setup, Deployment & Usage](#setup-deployment-&-usage)
+- [Introduction](#-introduction)
+- [Architecture](#-architecture)
+- [API Endpoints](#-api-endpoints)
+- [Client Capabilities](#️-client-capabilities)
+- [Project Structure](#-project-structure)
+- [Setup, Deployment & Usage](#️-setup-deployment--usage)
 
 ## 📌 Introduction
 FeMail is a **cross-platform, full-stack Gmail-like email system.**</br>

@@ -18,7 +18,7 @@ Make sure you have completed all the necessary steps as described in [wiki/setup
 ---
 
 ## ✉️ Mails Main App Screen
-  ![Main App](../assets/app2.png)
+  ![Main App](../assets/app8.png)
 
 ### 👤 Profile
 - Click your account picture at the top-right corner to view your profile.
@@ -39,16 +39,16 @@ Make sure you have completed all the necessary steps as described in [wiki/setup
   ![View Mail](../assets/app5.png)
 
 - Select multiple mails using checkboxes for bulk actions (Delete, Mark as Spam, Move to Label, etc.).  
-  ![Actions](../assets/app3.png)
+  ![Actions](../assets/app9.png)
 
 - Use the ⭐ icon to mark starred mails.  
-  ![Actions](../assets/app3.png)
+  ![Actions](../assets/app10.png)
 
 - In the **Drafts** section, click a draft mail to edit it. Then, choose to **Save** or **Send**.  
-  ![Edit Draft](../assets/app3.png)
+  ![Edit Draft](../assets/app11.png)
 
 - Use the search bar at the top to search emails by content, then press **Enter** or click the **Search Icon**.  
-  ![Search](../assets/app3.png)
+  ![Search](../assets/app12.png)
 
 ---
 
@@ -59,16 +59,16 @@ Make sure you have completed all the necessary steps as described in [wiki/setup
   ![Create Label](../assets/app6.png)
 
 - Click on a label in the sidebar to filter mails by that label.  
-  ![View Label](../assets/app6.png)
+  ![View Label](../assets/app13.png)
 
 - Click the three-dot menu next to any label to **Edit** or **Delete** it.  
-  ![Edit/Delete Label](../assets/app6.png)
+  ![Edit/Delete Label](../assets/app14.png)
 
 - Confirm or cancel deleting the label.  
-  ![Edit/Delete Label](../assets/app6.png)
+  ![Edit/Delete Label](../assets/app16.png)
 
 - Confirm or cancel editing the label.  
-  ![Edit/Delete Label](../assets/app6.png)
+  ![Edit/Delete Label](../assets/app15.png)
 
 ---
 
