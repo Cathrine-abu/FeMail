@@ -6,7 +6,7 @@ Make sure you have completed all the necessary steps as described in [wiki/setup
 ### 🔓 Login
 - If you don't have a FeMail account, click **"Register here"** to create one (you will be redirected to the register screen).
 - If you already have a FeMail account, fill in your username and password and click the **"Login"** button. 
- 
+
   ![Login Screen](../assets/login.png)
 - After logging in, you will see the main mail app screen.
 
@@ -69,9 +69,6 @@ Make sure you have completed all the necessary steps as described in [wiki/setup
 
   ![Actions](../assets/trash.png)
 
-- Use the search bar at the top to search emails by content, then press **Enter** or click the **Search Icon**. 
-
-  ![Search](../assets/app12.png)
 
 ---
 
