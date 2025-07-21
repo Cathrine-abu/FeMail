@@ -212,19 +212,6 @@ public class ViewMail extends AppCompatActivity {
                     mailViewModel.fetchMailsFromServer(token, AuthPrefs.getUserId(this));
                     finish();
                     return true;
-                } else if (id == R.id.action_label) {
-                    // Show label selection dialog
-                    com.example.femail.labels.LabelViewModel labelViewModel = new androidx.lifecycle.ViewModelProvider(this).get(com.example.femail.labels.LabelViewModel.class);
-                    labelViewModel.getAllLabels(AuthPrefs.getUserId(this)).observe(this, labels -> {
-                        com.example.femail.labels.LabelSelectionDialog dialog =
-                            new com.example.femail.labels.LabelSelectionDialog(labels, null); // Pass current mail's labels if you have them
-                        dialog.setOnLabelsSelectedListener(selectedLabels -> {
-                            // TODO: Save selected labels to the mail (update MailItem and database)
-                            Toast.makeText(this, "Selected: " + selectedLabels.size() + " labels", Toast.LENGTH_SHORT).show();
-                        });
-                        dialog.show(getSupportFragmentManager(), "LabelSelectionDialog");
-                    });
-                    return true;
                 }
                 return false;
             });
