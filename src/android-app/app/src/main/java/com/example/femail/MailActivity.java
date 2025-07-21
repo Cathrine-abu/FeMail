@@ -616,29 +616,6 @@ public class MailActivity extends AppCompatActivity {
         drawerLayout.closeDrawers();
     }
 
-    // Add this method to show the Move dialog
-    private void showMoveMailDialog(MailItem mail) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View view = getLayoutInflater().inflate(R.layout.dialog_move_mail, null);
-        builder.setView(view);
-
-        RecyclerView categoryList = view.findViewById(R.id.categoryList);
-        categoryList.setLayoutManager(new LinearLayoutManager(this));
-
-        // System categories
-        List<String> categories = new ArrayList<>(Arrays.asList("Primary", "Social", "Promotions", "Updates", "Unwanted"));
-        // Optionally add user labels here if available
-
-        final AlertDialog[] dialogHolder = new AlertDialog[1];
-        MoveCategoryAdapter adapter = new MoveCategoryAdapter(categories, selectedCategory -> {
-            moveMailToCategory(mail, selectedCategory);
-            dialogHolder[0].dismiss();
-        });
-        categoryList.setAdapter(adapter);
-        dialogHolder[0] = builder.create();
-        dialogHolder[0].show();
-    }
-
     // Add this method to update the mail's category
     private void moveMailToCategory(MailItem mail, String category) {
         mail.category = category.toLowerCase();

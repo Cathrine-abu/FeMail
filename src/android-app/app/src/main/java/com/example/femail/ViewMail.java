@@ -22,7 +22,10 @@ import com.example.femail.Mails.MoveCategoryAdapter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ViewMail extends AppCompatActivity {
 
@@ -209,19 +212,6 @@ public class ViewMail extends AppCompatActivity {
                     mailViewModel.fetchMailsFromServer(token, AuthPrefs.getUserId(this));
                     finish();
                     return true;
-                } else if (id == R.id.action_label) {
-                    // Show label selection dialog
-                    com.example.femail.labels.LabelViewModel labelViewModel = new androidx.lifecycle.ViewModelProvider(this).get(com.example.femail.labels.LabelViewModel.class);
-                    labelViewModel.getAllLabels(AuthPrefs.getUserId(this)).observe(this, labels -> {
-                        com.example.femail.labels.LabelSelectionDialog dialog =
-                            new com.example.femail.labels.LabelSelectionDialog(labels, null); // Pass current mail's labels if you have them
-                        dialog.setOnLabelsSelectedListener(selectedLabels -> {
-                            // TODO: Save selected labels to the mail (update MailItem and database)
-                            Toast.makeText(this, "Selected: " + selectedLabels.size() + " labels", Toast.LENGTH_SHORT).show();
-                        });
-                        dialog.show(getSupportFragmentManager(), "LabelSelectionDialog");
-                    });
-                    return true;
                 }
                 return false;
             });
@@ -240,7 +230,11 @@ public class ViewMail extends AppCompatActivity {
         RecyclerView categoryList = view.findViewById(R.id.categoryList);
         categoryList.setLayoutManager(new LinearLayoutManager(this));
 
-        List<String> categories = new ArrayList<>(Arrays.asList("Primary", "Social", "Promotions", "Updates"));
+        Map<String, String> categories = new LinkedHashMap<>();
+        categories.put("Primary", "Primary");
+        categories.put("Social", "Social");
+        categories.put("Promotions", "Promotions");
+        categories.put("Updates", "Primary");
         final AlertDialog[] dialogHolder = new AlertDialog[1];
 
         // Fetch user labels and update the adapter when loaded
@@ -248,11 +242,11 @@ public class ViewMail extends AppCompatActivity {
         labelViewModel.getAllLabels(AuthPrefs.getUserId(this)).observe(this, labels -> {
             if (labels != null) {
                 for (com.example.femail.labels.LabelItem label : labels) {
-                    categories.add(label.getName());
+                    categories.put(String.valueOf(label.getId()), label.getName());
                 }
             }
-            MoveCategoryAdapter adapter = new MoveCategoryAdapter(categories, selectedCategory -> {
-                moveMailToCategory(mail, selectedCategory);
+            MoveCategoryAdapter adapter = new MoveCategoryAdapter(categories, (categoryId, categoryName) -> {
+                moveMailToCategory(mail, categoryId, categoryName);
                 dialogHolder[0].dismiss();
             });
             categoryList.setAdapter(adapter);
@@ -261,10 +255,10 @@ public class ViewMail extends AppCompatActivity {
         dialogHolder[0].show();
     }
 
-    private void moveMailToCategory(MailItem mail, String category) {
+    private void moveMailToCategory(MailItem mail, String categoryId, String categoryName) {
         String token = AuthPrefs.getToken(this);
         String userId = AuthPrefs.getUserId(this);
-        if (category.equalsIgnoreCase("Primary")) {
+        if (categoryId.equalsIgnoreCase("Primary")) {
             mail.category = "primary";
             mail.direction = new ArrayList<>(Arrays.asList("inbox", "primary"));
             mail.isDeleted = false;
@@ -274,24 +268,24 @@ public class ViewMail extends AppCompatActivity {
             Toast.makeText(this, "Mail moved to Primary (Inbox)", Toast.LENGTH_SHORT).show();
             return;
         }
-        mail.category = category.toLowerCase();
+        mail.category = categoryId.toLowerCase();
         // Remove "inbox" from direction and add the new category
         if (mail.direction != null) {
             List<String> newDirection = new ArrayList<>(mail.direction);
             newDirection.remove("inbox");
-            if (!newDirection.contains(category.toLowerCase())) {
-                newDirection.add(category.toLowerCase());
+            if (!newDirection.contains(categoryId.toLowerCase())) {
+                newDirection.add(categoryId.toLowerCase());
             }
             mail.direction = newDirection;
         } else {
-            mail.direction = new ArrayList<>(Arrays.asList(category.toLowerCase()));
+            mail.direction = new ArrayList<>(Arrays.asList(categoryId.toLowerCase()));
         }
         // Remove from trash
         mail.isDeleted = false;
         mailViewModel.update(mail, AuthPrefs.getToken(this), AuthPrefs.getUserId(this));
         mailViewModel.updateMailOnServer(token, userId, mail,success -> {});
         mailViewModel.fetchMailsFromServer(token, userId);
-        Toast.makeText(this, "Mail moved to " + category, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Mail moved to " + categoryName, Toast.LENGTH_SHORT).show();
         refreshMailsFromServer();
     }
 
